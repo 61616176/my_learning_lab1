@@ -64,6 +64,8 @@ auto Tuple::GetValue(const Schema *schema, const uint32_t column_idx) const -> V
   assert(schema);
   const TypeId column_type = schema->GetColumn(column_idx).GetType();
   const char *data_ptr = GetDataPtr(schema, column_idx);
+  // assert(data_ptr != nullptr);
+
   // the third parameter "is_inlined" is unused
   return Value::DeserializeFrom(data_ptr, column_type);
 }
@@ -82,6 +84,9 @@ auto Tuple::GetDataPtr(const Schema *schema, const uint32_t column_idx) const ->
   assert(schema);
   const auto &col = schema->GetColumn(column_idx);
   bool is_inlined = col.IsInlined();
+
+  // assert(data_.data());
+
   // For inline type, data is stored where it is.
   if (is_inlined) {
     return (data_.data() + col.GetOffset());

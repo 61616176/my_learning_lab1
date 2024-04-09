@@ -87,6 +87,10 @@ class BasicPageGuard {
 
   auto GetData() -> const char * { return page_->GetData(); }
 
+  void SetMut(bool is_dirty) { is_dirty_ = is_dirty; }
+
+  auto GetPage() -> const Page * { return page_; }
+
   template <class T>
   auto As() -> const T * {
     return reinterpret_cast<const T *>(GetData());
@@ -106,7 +110,7 @@ class BasicPageGuard {
   friend class ReadPageGuard;
   friend class WritePageGuard;
 
-  [[maybe_unused]] BufferPoolManager *bpm_{nullptr};
+  BufferPoolManager *bpm_{nullptr};
   Page *page_{nullptr};
   bool is_dirty_{false};
 };
@@ -114,7 +118,10 @@ class BasicPageGuard {
 class ReadPageGuard {
  public:
   ReadPageGuard() = default;
-  ReadPageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {}
+  ReadPageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
+    // std::cout << "build a read guard of page" << PageId() << std::endl;
+  }
+  // ReadPageGuard(BasicPageGuard &&guard) : guard_(guard) {}
   ReadPageGuard(const ReadPageGuard &) = delete;
   auto operator=(const ReadPageGuard &) -> ReadPageGuard & = delete;
 
@@ -161,6 +168,8 @@ class ReadPageGuard {
 
   auto GetData() -> const char * { return guard_.GetData(); }
 
+  auto GetPage() -> const Page * { return guard_.page_; }
+
   template <class T>
   auto As() -> const T * {
     return guard_.As<T>();
@@ -174,7 +183,10 @@ class ReadPageGuard {
 class WritePageGuard {
  public:
   WritePageGuard() = default;
-  WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {}
+  WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
+    // std::cout << "build a write guard of page" << PageId() << std::endl;
+  }
+  // WritePageGuard(BasicPageGuard &&guard) : guard_(guard) {}
   WritePageGuard(const WritePageGuard &) = delete;
   auto operator=(const WritePageGuard &) -> WritePageGuard & = delete;
 

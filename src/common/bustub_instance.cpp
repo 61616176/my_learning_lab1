@@ -237,16 +237,20 @@ auto BustubInstance::ExecuteSql(const std::string &sql, ResultWriter &writer,
   auto *txn = is_local_txn ? current_txn_ : txn_manager_->Begin();
   try {
     auto result = ExecuteSqlTxn(sql, writer, txn, std::move(check_options));
+    std::cout << "here here here" << std::endl;
     if (!is_local_txn) {
       auto res = txn_manager_->Commit(txn);
       if (!res) {
         throw Exception("failed to commit txn");
       }
     }
+    std::cout << "here?" << std::endl;
     return result;
   } catch (bustub::Exception &ex) {
     txn_manager_->Abort(txn);
     current_txn_ = nullptr;
+    fmt::print("here is wrong\n");
+    std::cout << "here is wrong" << std::endl;
     throw ex;
   }
 }
@@ -279,7 +283,7 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
     }
     throw Exception(fmt::format("unsupported internal command: {}", sql));
   }
-
+  std::cout << "maybe here?" << std::endl;
   bool is_successful = true;
 
   std::shared_lock<std::shared_mutex> l(catalog_lock_);
@@ -348,8 +352,9 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
       exec_ctx->InitCheckOptions(std::move(check_options));
     }
     std::vector<Tuple> result_set{};
+    std::cout << "please not here1 \n";
     is_successful &= execution_engine_->Execute(optimized_plan, &result_set, txn, exec_ctx.get());
-
+    std::cout << "please not here2 \n";
     // Return the result set as a vector of string.
     auto schema = planner.plan_->OutputSchema();
 
@@ -364,7 +369,9 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
     // Transforming result set into strings.
     for (const auto &tuple : result_set) {
       writer.BeginRow();
+      std::cout << "happy" << std::endl;
       for (uint32_t i = 0; i < schema.GetColumnCount(); i++) {
+        std::cout << i << std::endl;
         writer.WriteCell(tuple.GetValue(&schema, i).ToString());
       }
       writer.EndRow();

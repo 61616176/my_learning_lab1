@@ -26,14 +26,26 @@ namespace bustub {
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
+ public:
+  LRUKNode(frame_id_t fid, size_t k) : k_(k), fid_(fid) {}
+  ~LRUKNode() = default;
+  auto ComputeKDistance(size_t current_timestamp) const -> size_t;
+  auto FindEarlyTime() const -> size_t;
+  void Record(size_t current_timestamp);
+  void SetEvictable(bool set_evictable);
+  auto CheckInf() const -> bool;
+  auto CheckEvictable() const -> bool;
+  auto FindFrameID() const -> frame_id_t;
+
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
 
-  [[maybe_unused]] std::list<size_t> history_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] frame_id_t fid_;
-  [[maybe_unused]] bool is_evictable_{false};
+  std::list<size_t> history_;  // timestamp应该有序排列，先到的是timestamp小的，后到的是timestamp大的。
+  size_t k_;
+  bool is_inf_{true};
+  frame_id_t fid_;
+  bool is_evictable_{false};
 };
 
 /**
@@ -91,8 +103,10 @@ class LRUKReplacer {
    * @brief Record the event that the given frame id is accessed at current timestamp.
    * Create a new entry for access history if frame id has not been seen before.
    *
+   * change the std::list<size_t> history
+   *
    * If frame id is invalid (ie. larger than replacer_size_), throw an exception. You can
-   * also use BUSTUB_ASSERT to abort the process if frame id is invalid.
+   * also use BUSTUB_ASSERT to abort the process if frame id is invalid.?
    *
    * @param frame_id id of frame that received a new access.
    * @param access_type type of access that was received. This parameter is only needed for
@@ -147,15 +161,17 @@ class LRUKReplacer {
    */
   auto Size() -> size_t;
 
+  void SetCurrentTime();
+
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
-  [[maybe_unused]] size_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] std::mutex latch_;
+  std::unordered_map<frame_id_t, LRUKNode> node_store_;
+  size_t current_timestamp_{0};
+  size_t curr_size_{0};
+  size_t replacer_size_;
+  size_t k_;
+  std::mutex latch_;
 };
 
 }  // namespace bustub

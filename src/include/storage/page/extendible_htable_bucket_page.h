@@ -24,6 +24,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -84,7 +85,7 @@ class ExtendibleHTableBucketPage {
    * @return true if removed, false if not found
    */
   auto Remove(const KeyType &key, const KeyComparator &cmp) -> bool;
-
+  void ShowAllKey();
   void RemoveAt(uint32_t bucket_idx);
 
   /**

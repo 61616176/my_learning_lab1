@@ -54,18 +54,22 @@ class ExecutionEngine {
   auto Execute(const AbstractPlanNodeRef &plan, std::vector<Tuple> *result_set, Transaction *txn,
                ExecutorContext *exec_ctx) -> bool {
     BUSTUB_ASSERT((txn == exec_ctx->GetTransaction()), "Broken Invariant");
+    //std::cout << "here is no wrong" << std::endl;
 
     // Construct the executor for the abstract plan node
     auto executor = ExecutorFactory::CreateExecutor(exec_ctx, plan);
-
+    //std::cout << "here also is no wrong" << std::endl;
     // Initialize the executor
     auto executor_succeeded = true;
 
     try {
       executor->Init();
+      //std::cout << "try here\n";
       PollExecutor(executor.get(), plan, result_set);
+      //std::cout << "try here\n";
       PerformChecks(exec_ctx);
     } catch (const ExecutionException &ex) {
+      //std::cout << "exception out\n";
       executor_succeeded = false;
       if (result_set != nullptr) {
         result_set->clear();

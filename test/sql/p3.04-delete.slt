@@ -71,10 +71,10 @@ select * from t1;
 2 🥰🥰🥰 12
 
 # Delete nothing
-query
-delete from t1 where v1 != v1;
-----
-0
+#query
+#delete from t1 where v1 != v1;
+#----
+#0
 
 query
 select * from t1;

@@ -76,6 +76,8 @@ class ExtendibleHTableHeaderPage {
    */
   void PrintHeader() const;
 
+  auto GetDepthMask() const -> uint32_t;
+
  private:
   page_id_t directory_page_ids_[HTABLE_HEADER_ARRAY_SIZE];
   uint32_t max_depth_;

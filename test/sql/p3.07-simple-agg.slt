@@ -56,6 +56,11 @@ delete from t1;
 7
 
 query
+select * from t1;
+----
+
+
+query
 select count(*) from t1;
 ----
 0

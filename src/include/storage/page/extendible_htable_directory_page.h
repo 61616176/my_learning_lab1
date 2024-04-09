@@ -44,7 +44,7 @@ static constexpr uint64_t HTABLE_DIRECTORY_ARRAY_SIZE = 1 << HTABLE_DIRECTORY_MA
  */
 class ExtendibleHTableDirectoryPage {
  public:
-  // Delete all constructor / destructor to ensure memory safety
+  // Delete all constructor / destructor to ensure memory safety --> why?
   ExtendibleHTableDirectoryPage() = delete;
   DISALLOW_COPY_AND_MOVE(ExtendibleHTableDirectoryPage);
 
@@ -125,12 +125,12 @@ class ExtendibleHTableDirectoryPage {
    * Increment the global depth of the directory
    */
   void IncrGlobalDepth();
-
+  void Growing();
   /**
    * Decrement the global depth of the directory
    */
   void DecrGlobalDepth();
-
+  void Shrinking();
   /**
    * @return true if the directory can be shrunk
    */
@@ -188,6 +188,9 @@ class ExtendibleHTableDirectoryPage {
    * Prints the current directory
    */
   void PrintDirectory() const;
+
+  auto GetPointersToBucket(uint32_t bucket_idx) -> std::vector<uint32_t>;
+  auto CanGrow() -> bool;
 
  private:
   uint32_t max_depth_;

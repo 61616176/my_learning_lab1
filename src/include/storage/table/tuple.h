@@ -60,7 +60,7 @@ class Tuple {
   // constructor for table heap tuple
   explicit Tuple(RID rid) : rid_(rid) {}
 
-  static auto Empty() -> Tuple { return Tuple{RID{INVALID_PAGE_ID, 0}}; }
+  static auto Empty() -> Tuple { return Tuple{RID{INVALID_PAGE_ID, 0}}; }  // Tuple{}是什么意思啊？
 
   // constructor for creating a new tuple based on input value
   Tuple(std::vector<Value> values, const Schema *schema);
@@ -110,6 +110,9 @@ class Tuple {
   auto ToString(const Schema *schema) const -> std::string;
 
   friend inline auto IsTupleContentEqual(const Tuple &a, const Tuple &b) { return a.data_ == b.data_; }
+
+  /*only for test*/
+  auto GetDataTest() const -> std::vector<char> { return data_; }
 
  private:
   // Get the starting storage address of specific column

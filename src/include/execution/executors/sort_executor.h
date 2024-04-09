@@ -14,9 +14,11 @@
 
 #include <memory>
 #include <vector>
+//#include <algorithm>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
+#include "execution/expressions/column_value_expression.h"
 #include "execution/plans/seq_scan_plan.h"
 #include "execution/plans/sort_plan.h"
 #include "storage/table/tuple.h"
@@ -26,6 +28,9 @@ namespace bustub {
 /**
  * The SortExecutor executor executes a sort.
  */
+
+using sortKey = std::pair<std::vector<Value>, std::vector<Value>>;
+
 class SortExecutor : public AbstractExecutor {
  public:
   /**
@@ -52,5 +57,14 @@ class SortExecutor : public AbstractExecutor {
  private:
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
+
+  std::unique_ptr<AbstractExecutor> child_executor_;
+
+  std::vector<sortKey> sorted_vec_;
+
+  /*represent if is finished*/
+  bool status_{false};
+
+  bool sorted_{false};
 };
 }  // namespace bustub

@@ -17,12 +17,7 @@
 namespace bustub {
 
 DiskScheduler::DiskScheduler(DiskManager *disk_manager) : disk_manager_(disk_manager) {
-  // TODO(P1): remove this line after you have implemented the disk scheduler API
-  throw NotImplementedException(
-      "DiskScheduler is not implemented yet. If you have finished implementing the disk scheduler, please remove the "
-      "throw exception line in `disk_scheduler.cpp`.");
-
-  // Spawn the background thread
+  pool_.Put(false);
   background_thread_.emplace([&] { StartWorkerThread(); });
 }
 
@@ -30,12 +25,30 @@ DiskScheduler::~DiskScheduler() {
   // Put a `std::nullopt` in the queue to signal to exit the loop
   request_queue_.Put(std::nullopt);
   if (background_thread_.has_value()) {
+    pool_.Get();
+    pool_.Put(true);
     background_thread_->join();
   }
 }
 
-void DiskScheduler::Schedule(DiskRequest r) {}
+void DiskScheduler::Schedule(DiskRequest r) {
+  std::optional<DiskRequest> optional_r(std::move(r));
+  request_queue_.Put(std::move(optional_r));
+}
 
-void DiskScheduler::StartWorkerThread() {}
-
+void DiskScheduler::StartWorkerThread() {
+  while (true) {
+    std::optional<DiskRequest> request = request_queue_.Get();
+    if (request.has_value()) {
+      request->is_write_ ? disk_manager_->WritePage(request->page_id_, request->data_)
+                         : disk_manager_->ReadPage(request->page_id_, request->data_);
+      request->callback_.set_value(true);
+    }
+    if (!pool_.Get()) {
+      pool_.Put(false);
+    } else {
+      break;
+    }
+  }
+}
 }  // namespace bustub

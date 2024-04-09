@@ -52,6 +52,7 @@ class BufferPoolManager {
   /** @brief Return the pointer to all the pages in the buffer pool. */
   auto GetPages() -> Page * { return pages_; }
 
+  auto FindFreeFrame(frame_id_t &frame_id) -> bool;
   /**
    * TODO(P1): Add implementation
    *
@@ -171,6 +172,8 @@ class BufferPoolManager {
    * @return false if the page exists but could not be deleted, true if the page didn't exist or deletion succeeded
    */
   auto DeletePage(page_id_t page_id) -> bool;
+  void ShowPages();
+  void ShowPage(page_id_t page_id);
 
  private:
   /** Number of pages in the buffer pool. */
@@ -181,7 +184,7 @@ class BufferPoolManager {
   /** Array of buffer pool pages. */
   Page *pages_;
   /** Pointer to the disk sheduler. */
-  std::unique_ptr<DiskScheduler> disk_scheduler_ __attribute__((__unused__));
+  std::unique_ptr<DiskScheduler> disk_scheduler_;
   /** Pointer to the log manager. Please ignore this for P1. */
   LogManager *log_manager_ __attribute__((__unused__));
   /** Page table for keeping track of buffer pool pages. */

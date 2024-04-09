@@ -83,7 +83,7 @@ class DiskExtendibleHashTable {
    * @param transaction the current transaction
    * @return the value(s) associated with the given key
    */
-  auto GetValue(const K &key, std::vector<V> *result, Transaction *transaction = nullptr) const -> bool;
+  auto GetValue(const K &key, std::vector<V> *result, Transaction *transaction = nullptr) -> bool;
 
   /**
    * Helper function to verify the integrity of the extendible hash table's directory.
@@ -110,18 +110,35 @@ class DiskExtendibleHashTable {
    */
   auto Hash(K key) const -> uint32_t;
 
-  auto InsertToNewDirectory(ExtendibleHTableHeaderPage *header, uint32_t directory_idx, uint32_t hash, const K &key,
-                            const V &value) -> bool;
+  auto GetDirectoryPageIdFromHeader(uint32_t hash_key, const ExtendibleHTableHeaderPage *header) -> page_id_t;
 
-  auto InsertToNewBucket(ExtendibleHTableDirectoryPage *directory, uint32_t bucket_idx, const K &key, const V &value)
+  auto GetBucketPageIdFromDirectory(uint32_t hash, const ExtendibleHTableDirectoryPage *directory) -> page_id_t;
+
+  auto GetValueFromBucket(const K &key, std::vector<V> *result, const ExtendibleHTableBucketPage<K, V, KC> *bucket)
       -> bool;
+  auto InsertToHeader(uint32_t hash_key, ExtendibleHTableHeaderPage *header) -> page_id_t;
+  // auto InsertToDirectoryAndBucket(const K &key, const V &value, uint32_t hash_key, page_id_t page_id) -> bool;
+  auto SplitAndRemap(uint32_t hash_key, page_id_t bucket_page_id, page_id_t directory_page_id,
+                     ExtendibleHTableBucketPage<K, V, KC> *bucket) -> page_id_t;
+  auto InsertToBucket(const K &key, const V &value, ExtendibleHTableBucketPage<K, V, KC> *bucket) -> bool;
+  void CreateNewDirectoryPage(page_id_t *page_id);
+  void CreateNewBucket(page_id_t *page_id);
+  auto InsertToDirectory(uint32_t hash_key, ExtendibleHTableDirectoryPage *directory) -> page_id_t;
+  void ShrinkDirectoryOneTime(ExtendibleHTableDirectoryPage *directory);
+  auto CheckBucketMerge(ExtendibleHTableDirectoryPage *directory, const ExtendibleHTableBucketPage<K, V, KC> *bucket,
+                        const ExtendibleHTableBucketPage<K, V, KC> *split_image_bucket, uint32_t bucket_idx,
+                        uint32_t split_image_bucket_idx) -> const ExtendibleHTableBucketPage<K, V, KC> *;
+  void BucketMerge(ExtendibleHTableDirectoryPage *directory, page_id_t bucket_page_id, uint32_t bucket_idx);
+  // auto InsertToBucket(ExtendibleHTableDirectoryPage *directory, uint32_t bucket_idx, const K &key, const V
+  // &value)
+  //    -> bool;
 
-  void UpdateDirectoryMapping(ExtendibleHTableDirectoryPage *directory, uint32_t new_bucket_idx,
-                              page_id_t new_bucket_page_id, uint32_t new_local_depth, uint32_t local_depth_mask);
+  // void UpdateDirectoryMapping(ExtendibleHTableDirectoryPage *directory, uint32_t new_bucket_idx,
+  //                            page_id_t new_bucket_page_id, uint32_t new_local_depth, uint32_t local_depth_mask);
 
-  void MigrateEntries(ExtendibleHTableBucketPage<K, V, KC> *old_bucket,
-                      ExtendibleHTableBucketPage<K, V, KC> *new_bucket, uint32_t new_bucket_idx,
-                      uint32_t local_depth_mask);
+  // void MigrateEntries(ExtendibleHTableBucketPage<K, V, KC> *old_bucket,
+  //                    ExtendibleHTableBucketPage<K, V, KC> *new_bucket, uint32_t new_bucket_idx,
+  //                    uint32_t local_depth_mask);
 
   // member variables
   std::string index_name_;

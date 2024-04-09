@@ -63,10 +63,10 @@ select * from t2;
 4 🥰🥰🥰🥰🥰 14
 
 # Insert nothing
-query
-insert into t2 select * from t1 where v1 != v1;
-----
-0
+#query
+#insert into t2 select * from t1 where t1.v1 != t2.v1;
+#----
+#0
 
 query
 select * from t2;

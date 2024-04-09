@@ -70,7 +70,7 @@ auto ProcessExtraOptions(const std::string &sql, bustub::BustubInstance &instanc
       std::stringstream result;
       auto writer = bustub::SimpleStreamWriter(result);
       instance.ExecuteSql("explain " + sql, writer);
-
+      
       if (opt == "ensure:index_scan") {
         if (!bustub::StringUtil::Contains(result.str(), "IndexScan")) {
           fmt::print("IndexScan not found\n");
@@ -85,6 +85,7 @@ auto ProcessExtraOptions(const std::string &sql, bustub::BustubInstance &instanc
       } else if (opt == "ensure:hash_join") {
         if (bustub::StringUtil::Split(result.str(), "HashJoin").size() != 2 &&
             !bustub::StringUtil::Contains(result.str(), "Filter")) {
+          fmt::print("size: {}\n",bustub::StringUtil::Split(result.str(), "HashJoin").size());
           fmt::print("HashJoin not found\n");
           return false;
         }
@@ -233,7 +234,7 @@ auto main(int argc, char **argv) -> int {  // NOLINT
   if (bustub->buffer_pool_manager_ != nullptr) {
     bustub->GenerateTestTable();
   }
-
+  
   for (const auto &record : result) {
     auto check_options = std::make_shared<bustub::CheckOptions>();
     fmt::print("{}\n", record->loc_);
@@ -304,7 +305,9 @@ auto main(int argc, char **argv) -> int {  // NOLINT
 
           std::stringstream result;
           auto writer = bustub::SimpleStreamWriter(result, true, " ");
+          std::cout << "here 1\n";
           bustub->ExecuteSql(query.sql_, writer, check_options);
+          std::cout << "here\n";
           if (verbose) {
             fmt::print("--- YOUR RESULT ---\n{}\n", result.str());
           }

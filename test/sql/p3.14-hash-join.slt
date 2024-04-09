@@ -596,6 +596,44 @@ insert into temp_4 values
     (34, 1, 1443, 41478),
     (35, 2, 7564, 14242);
 
+query
+EXPLAIN select * from temp_1 t1, temp_2 t2 WHERE t1.colA = t2.colA and t1.colB = t2.colC and t1.colA = t2.colC;
+----
+=== BINDER ===
+BoundSelect {
+  table=BoundCrossProductRef { left=BoundBaseTableRef { table=temp_1, oid=25, alias=t1 }, right=BoundBaseTableRef { table=temp_2, oid=26, alias=t2 } },
+  columns=["t1.cola", "t1.colb", "t1.colc", "t1.cold", "t2.cola", "t2.colb", "t2.colc"],
+  groupBy=[],
+  having=,
+  where=(((t1.cola=t2.cola)and(t1.colb=t2.colc))and(t1.cola=t2.colc)),
+  limit=,
+  offset=,
+  order_by=[],
+  is_distinct=false,
+  ctes=,
+}
+=== PLANNER ===
+Projection { exprs=["#0.0", "#0.1", "#0.2", "#0.3", "#0.4", "#0.5", "#0.6"] } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER, t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+  Filter { predicate=(((#0.0=#0.4)and(#0.1=#0.6))and(#0.0=#0.6)) } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER, t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+    NestedLoopJoin { type=Inner, predicate=true } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER, t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+      SeqScan { table=temp_1 } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER)
+      SeqScan { table=temp_2 } | (t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+=== OPTIMIZER ===
+HashJoin { type=Inner, left_key=["#0.0", "#0.1", "#0.0"], right_key=["#1.0", "#1.2", "#1.2"] } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER, t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+  SeqScan { table=temp_1 } | (t1.cola:INTEGER, t1.colb:INTEGER, t1.colc:INTEGER, t1.cold:INTEGER)
+  SeqScan { table=temp_2 } | (t2.cola:INTEGER, t2.colb:INTEGER, t2.colc:INTEGER)
+
+#query
+#EXPLAIN select * from temp_1 t1 inner join temp_2 t2 on t1.colC = t2.colB and t2.colC = t1.colB ;
+#----
+
+
+#query
+#EXPLAIN select t1.colA from temp_1 t1 inner join temp_4 t4 on t1.colA = t4.colA and t1.colB = t4.colB and t1.colC = t4.colC and t1.colD = t4.colD;
+#----
+
+
+
 query rowsort +ensure:hash_join_no_filter
 select t1.colA from temp_1 t1 inner join temp_4 t4 on t1.colA = t4.colA and t1.colB = t4.colB and t1.colC = t4.colC and t1.colD = t4.colD;
 ----

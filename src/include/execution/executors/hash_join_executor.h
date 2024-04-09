@@ -19,6 +19,7 @@
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/hash_join_plan.h"
 #include "storage/table/tuple.h"
+#include "type/value_factory.h"
 
 namespace bustub {
 
@@ -54,6 +55,18 @@ class HashJoinExecutor : public AbstractExecutor {
  private:
   /** The HashJoin plan node to be executed. */
   const HashJoinPlanNode *plan_;
+
+  std::unordered_map<HashJoinKey, HashJoinValue> hmap_{};
+
+  std::unique_ptr<AbstractExecutor> left_child_;
+
+  std::unique_ptr<AbstractExecutor> right_child_;
+
+  std::vector<HashJoinKey> not_matching_{};
+
+  bool is_hmap_built_{false};
+
+  std::vector<Tuple> tuple_keeper_{};
 };
 
 }  // namespace bustub

@@ -111,6 +111,7 @@ auto TableHeap::GetTupleMeta(RID rid) -> TupleMeta {
 
 auto TableHeap::MakeIterator() -> TableIterator {
   std::unique_lock<std::mutex> guard(latch_);
+  std::cout << "here" << std::endl;
   auto last_page_id = last_page_id_;
   guard.unlock();
 

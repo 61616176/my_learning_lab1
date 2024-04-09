@@ -79,6 +79,11 @@ update t1 set v3 = 645, v1 = 8, v2 = -20 where v1 = 2;
 ----
 1
 
+#query 
+#select * from t1 where v1 = 2;
+#---
+#8 -20 645
+
 query +ensure:index_scan
 select * from t1 where v1 = 8;
 ----

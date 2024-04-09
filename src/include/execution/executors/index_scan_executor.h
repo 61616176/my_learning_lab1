@@ -44,5 +44,7 @@ class IndexScanExecutor : public AbstractExecutor {
  private:
   /** The index scan plan node to be executed. */
   const IndexScanPlanNode *plan_;
+  /** status represent scan is whether finished or not, true means not finished*/
+  bool status{true};
 };
 }  // namespace bustub

@@ -19,6 +19,23 @@ select * from t1;
 3 🥰🥰🥰🥰 13
 4 🥰🥰🥰🥰🥰 14
 
+query
+EXPLAIN update t1 set v3 = 445 where v1 >= 3;
+----
+=== BINDER ===
+BoundUpdate {
+  table=BoundBaseTableRef { table=t1, oid=24 },
+  filter_expr=(t1.v1>=3),
+  target_expr=[("t1.v3", "445")],
+}
+=== PLANNER ===
+Update { table_oid=24, target_exprs=["#0.0", "#0.1", "445"] } | (__bustub_internal.update_rows:INTEGER)
+  Filter { predicate=(#0.0>=3) } | (t1.v1:INTEGER, t1.v2:VARCHAR(128), t1.v3:INTEGER)
+    SeqScan { table=t1 } | (t1.v1:INTEGER, t1.v2:VARCHAR(128), t1.v3:INTEGER)
+=== OPTIMIZER ===
+Update { table_oid=24, target_exprs=["#0.0", "#0.1", "445"] } | (__bustub_internal.update_rows:INTEGER)
+  SeqScan { table=t1, filter=(#0.0>=3) } | (t1.v1:INTEGER, t1.v2:VARCHAR(128), t1.v3:INTEGER)
+
 # Update in table
 query
 update t1 set v3 = 445 where v1 >= 3;
