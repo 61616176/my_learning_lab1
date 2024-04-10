@@ -26,7 +26,7 @@ void InsertExecutor::Init() { child_executor_->Init(); }
  *一次只能插一个值，还是一次插多个值 --> 应该是多个
  */
 auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
-  //std::cout<< "0" << std::endl;
+  // std::cout<< "0" << std::endl;
 
   Catalog *catalog_ptr = exec_ctx_->GetCatalog();
   TableInfo *table_info = catalog_ptr->GetTable(plan_->GetTableOid());
@@ -35,7 +35,7 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   Tuple child_tuple{};
   int32_t inserted_tuple_number{0};
   // Get the next tuple
-  //std::cout<< "1" << std::endl;
+  // std::cout<< "1" << std::endl;
 
   if (!status) {
     return false;
@@ -73,7 +73,7 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     // child_tuple = Tuple::Empty();
   }
 
-  //std::cout<< "2" << std::endl;
+  // std::cout<< "2" << std::endl;
   Value val(INTEGER, inserted_tuple_number);
   *tuple = Tuple({val}, &GetOutputSchema());
   status = false;

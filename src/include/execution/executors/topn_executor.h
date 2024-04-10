@@ -77,8 +77,8 @@ class TopNExecutor : public AbstractExecutor {
     ~TopNDeque() = default;
 
     void Push(const sortKey &key) {
-      //std::cout << std::endl;
-      //std::cout << "begin  push\n";
+      // std::cout << std::endl;
+      // std::cout << "begin  push\n";
       if (deque_.size() < capacity_) {
         deque_.push_back(key);
       } else if (Compare_(key, deque_.front())) {
@@ -88,8 +88,6 @@ class TopNExecutor : public AbstractExecutor {
       }
 
       std::make_heap(deque_.begin(), deque_.end(), Compare_);
-
-      Print();
     }
 
     auto Pop(sortKey &key) -> bool {
@@ -104,20 +102,6 @@ class TopNExecutor : public AbstractExecutor {
       return true;
     }
 
-    void Print() const {
-      //std::cout << "************************\n";
-      for (const auto &i : deque_) {
-        for (const auto &val : i.first) {
-          //std::cout << val.ToString() << " ";
-        }
-        //std::cout << "|| "; 
-        for (const auto &val : i.second) {
-          //std::cout << val.ToString() << " ";
-        }
-        //std::cout << std::endl;
-      }
-    }
-
     auto Size() const -> std::size_t { return deque_.size(); }
 
     auto Capacity() const -> std::size_t { return capacity_; }
@@ -125,16 +109,6 @@ class TopNExecutor : public AbstractExecutor {
     auto Begin() -> std::vector<sortKey>::iterator { return deque_.begin(); }
 
     auto End() -> std::vector<sortKey>::iterator { return deque_.end(); }
-
-    /*only for test*/
-    void ShowCompTypes() {
-      //std::cout << "show comp types\n";
-      //std::cout << comp_types_.size() << std::endl;
-      for (const auto &i : comp_types_) {
-        //std::cout << static_cast<int>(i) << " ";
-      }
-      //std::cout << std::endl;
-    }
 
    private:
     std::size_t capacity_;
@@ -158,28 +132,28 @@ class TopNExecutor : public AbstractExecutor {
         };
 
     std::function<bool(const sortKey &, const sortKey &)> Compare_ = [&](const sortKey &first, const sortKey &second) {
-      //std::cout << "make compare: " << make_compare_ << std::endl;
+      // std::cout << "make compare: " << make_compare_ << std::endl;
       BUSTUB_ASSERT(comp_types_.empty() == false, "comp_types_ must not be empty!");
       for (uint32_t idx = 0; idx < comp_types_.size(); idx++) {
         if (EqualCompare_(first, second, idx)) {
-          //std::cout << "equal\n";
+          // std::cout << "equal\n";
           continue;
         }
 
         if (comp_types_[idx] == OrderByType::DEFAULT || comp_types_[idx] == OrderByType::ASC) {
           if (make_compare_) {
-            //std::cout << "建立大顶堆\n";
+            // std::cout << "建立大顶堆\n";
             return GreaterCompare_(first, second, idx);
           }
-          //std::cout << "升序， 比较谁小\n";
+          // std::cout << "升序， 比较谁小\n";
           return LessCompare_(first, second, idx);
         }
 
         if (make_compare_) {
-          //std::cout << "建立小顶堆\n";
+          // std::cout << "建立小顶堆\n";
           return LessCompare_(first, second, idx);
         }
-        //std::cout << "降序，比较谁大\n";
+        // std::cout << "降序，比较谁大\n";
         return GreaterCompare_(first, second, idx);
       }
       // if go here ,wrong!
@@ -194,6 +168,5 @@ class TopNExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_executor_;
 
   std::unique_ptr<TopNDeque> topn_deque_;
-
 };
 }  // namespace bustub

@@ -27,7 +27,7 @@ auto IndexScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
 
   // index to get rid
   Value key = plan_->pred_key_->Evaluate(nullptr, index_info->key_schema_);
-  //std::cout << key.ToString() << std::endl;
+  // std::cout << key.ToString() << std::endl;
   std::vector<RID> result = {};
   Schema &key_schema = index_info->key_schema_;
   index_info->index_->ScanKey({{key}, &key_schema}, &result, nullptr);  // Value become Tuple is ok?

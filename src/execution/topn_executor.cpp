@@ -12,8 +12,6 @@ void TopNExecutor::Init() {
   /*init child executor*/
   child_executor_->Init();
 
-  topn_deque_->ShowCompTypes();
-
   Tuple child_tuple{};
   RID child_rid;
 

@@ -71,12 +71,12 @@ class SimpleAggregationHashTable {
    * @param input The input value
    */
   void CombineAggregateValues(AggregateValue *result, const AggregateValue &input) {
-    //std::cout << "combine aggregate value\n";
+    // std::cout << "combine aggregate value\n";
     for (auto i : result->aggregates_) {
       auto tmp = i.ToString();
-      //std::cout << tmp << std::endl;
+      // std::cout << tmp << std::endl;
     }
-    //std::cout << "size: " << result->aggregates_.size() << std::endl;
+    // std::cout << "size: " << result->aggregates_.size() << std::endl;
 
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
@@ -130,7 +130,7 @@ class SimpleAggregationHashTable {
         }
       }
     }
-    //std::cout << "2 " << std::endl;
+    // std::cout << "2 " << std::endl;
   }
 
   /**

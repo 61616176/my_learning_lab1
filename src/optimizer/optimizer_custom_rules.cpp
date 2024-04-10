@@ -8,19 +8,19 @@
 namespace bustub {
 
 auto Optimizer::OptimizeCustom(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
-  //std::cout << "optimize begin\n";
+  // std::cout << "optimize begin\n";
   auto p = plan;
   p = OptimizeMergeProjection(p);
   p = OptimizeMergeFilterNLJ(p);
   p = OptimizeNLJAsHashJoin(p);
-  //std::cout << "try to order by index\n";
+  // std::cout << "try to order by index\n";
   p = OptimizeOrderByAsIndexScan(p);
-  //std::cout << "finish order by index\n";
+  // std::cout << "finish order by index\n";
   p = OptimizeSortLimitAsTopN(p);
-  //std::cout << "continue\n";
+  // std::cout << "continue\n";
   p = OptimizeMergeFilterScan(p);
   p = OptimizeSeqScanAsIndexScan(p);
-  //std::cout << "finished\n";
+  // std::cout << "finished\n";
   return p;
 }
 

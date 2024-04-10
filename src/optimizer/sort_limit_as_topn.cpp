@@ -24,7 +24,7 @@ auto Optimizer::OptimizeSortLimitAsTopN(const AbstractPlanNodeRef &plan) -> Abst
       const auto &sort_plan = dynamic_cast<const SortPlanNode &>(*child);
       auto &order_bys = sort_plan.GetOrderBy();
       auto sort_plan_child = sort_plan.GetChildPlan();
-      //std::cout << "cast to topn success\n";
+      // std::cout << "cast to topn success\n";
       return std::make_shared<TopNPlanNode>(std::make_shared<bustub::Schema>(plan->OutputSchema()), sort_plan_child,
                                             order_bys, limit);
     }

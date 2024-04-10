@@ -37,7 +37,7 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     if (scanned_tuple.first.is_deleted_) {
       ++(*iter_ptr_);
       // return true;
-      //std::cout << "deleted" << std::endl;
+      // std::cout << "deleted" << std::endl;
       continue;
     }
 

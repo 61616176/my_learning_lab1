@@ -49,22 +49,22 @@ auto Optimizer::OptimizeMergeFilterNLJ(const AbstractPlanNodeRef &plan) -> Abstr
     children.emplace_back(OptimizeMergeFilterNLJ(child));
   }
   auto optimized_plan = plan->CloneWithChildren(std::move(children));
-  //std::cout << "begin merge filter to nlj\n";
+  // std::cout << "begin merge filter to nlj\n";
   if (optimized_plan->GetType() == PlanType::Filter) {
     const auto &filter_plan = dynamic_cast<const FilterPlanNode &>(*optimized_plan);
     // Has exactly one child
     BUSTUB_ENSURE(optimized_plan->children_.size() == 1, "Filter with multiple children?? Impossible!");
     const auto &child_plan = optimized_plan->children_[0];
-    //std::cout << "try to find out nlj\n";
+    // std::cout << "try to find out nlj\n";
     if (child_plan->GetType() == PlanType::NestedLoopJoin) {
       const auto &nlj_plan = dynamic_cast<const NestedLoopJoinPlanNode &>(*child_plan);
       // Has exactly two children
       BUSTUB_ENSURE(child_plan->GetChildren().size() == 2, "NLJ should have exactly 2 children.");
 
-      //std::cout << "appraoching succeed merging filter to nlj\n";
+      // std::cout << "appraoching succeed merging filter to nlj\n";
       if (IsPredicateTrue(nlj_plan.Predicate())) {
         // Only rewrite when NLJ has always true predicate.
-        //std::cout << "succeed merging filter to nlj\n";
+        // std::cout << "succeed merging filter to nlj\n";
         return std::make_shared<NestedLoopJoinPlanNode>(
             filter_plan.output_schema_, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
             RewriteExpressionForJoin(filter_plan.GetPredicate(),

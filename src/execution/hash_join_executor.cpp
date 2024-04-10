@@ -21,7 +21,7 @@ HashJoinExecutor::HashJoinExecutor(ExecutorContext *exec_ctx, const HashJoinPlan
       plan_(plan),
       left_child_(std::move(left_child)),
       right_child_(std::move(right_child)) {
-  //std::cout << 1 << std::endl;
+  // std::cout << 1 << std::endl;
   if (!(plan->GetJoinType() == JoinType::LEFT || plan->GetJoinType() == JoinType::INNER)) {
     // Note for 2023 Fall: You ONLY need to implement left join and inner join.
     throw bustub::NotImplementedException(fmt::format("join type {} not supported", plan->GetJoinType()));
@@ -59,7 +59,7 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       }
       if (std::find(not_matching_.begin(), not_matching_.end(), key) == not_matching_.end()) {
         not_matching_.push_back(key);
-        //std::cout << "first not matching size: " << not_matching_.size() << std::endl;
+        // std::cout << "first not matching size: " << not_matching_.size() << std::endl;
       }
     }
     is_hmap_built_ = true;
@@ -97,15 +97,15 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       auto pos = std::find(not_matching_.begin(), not_matching_.end(), key);
       if (pos != not_matching_.end()) {
         not_matching_.erase(pos);
-        //std::cout << "not matching - 1,now size is: " << not_matching_.size() << std::endl;
+        // std::cout << "not matching - 1,now size is: " << not_matching_.size() << std::endl;
       }
 
       return true;
     }
   }
-  //std::cout << "not matching size: " << not_matching_.size() << std::endl;
+  // std::cout << "not matching size: " << not_matching_.size() << std::endl;
   while (plan_->GetJoinType() == JoinType::LEFT && not_matching_.size() > 0) {
-    //std::cout << "join type==left\n";
+    // std::cout << "join type==left\n";
     HashJoinKey key = not_matching_.back();
 
     // construct null value of right schema

@@ -29,7 +29,7 @@ void AggregationExecutor::Init() {
 }
 
 auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
-  //fmt::print("start aggragate\n");
+  // fmt::print("start aggragate\n");
   if (!status) {
     return false;
   }
@@ -46,13 +46,13 @@ auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       auto key = MakeAggregateKey(tuple);
       auto val = MakeAggregateValue(tuple);
 
-      //std::cout << "key: " << std::endl;
-      //for (auto i : key.group_bys_) {
+      // std::cout << "key: " << std::endl;
+      // for (auto i : key.group_bys_) {
       //  std::cout << i.ToString() << std::endl;
       //}
 
-      //std::cout << "val: " << std::endl;
-      //for (auto i : val.aggregates_) {
+      // std::cout << "val: " << std::endl;
+      // for (auto i : val.aggregates_) {
       //  std::cout << i.ToString() << std::endl;
       //}
 

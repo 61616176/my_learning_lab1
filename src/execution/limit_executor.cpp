@@ -21,7 +21,7 @@ LimitExecutor::LimitExecutor(ExecutorContext *exec_ctx, const LimitPlanNode *pla
 void LimitExecutor::Init() { child_executor_->Init(); }
 
 auto LimitExecutor::Next(Tuple *tuple, RID *rid) -> bool {
-  //std::cout << "begin limit\n";
+  // std::cout << "begin limit\n";
   if (cur_num == plan_->GetLimit()) {
     return false;
   }

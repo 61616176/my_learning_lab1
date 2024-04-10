@@ -8,42 +8,8 @@ SortExecutor::SortExecutor(ExecutorContext *exec_ctx, const SortPlanNode *plan,
 
 void SortExecutor::Init() { child_executor_->Init(); }
 
-/*
- *start first pos of duplicate value
- *end first pos of new value
- *idx current idx to find duplicate value
- *return false means that there is no more duplicate value in the rest of vector
- */
-auto FindDuplicateRange(const std::vector<sortKey>::iterator &search_begin,
-                        const std::vector<sortKey>::iterator &search_end, std::vector<sortKey>::iterator &start,
-                        std::vector<sortKey>::iterator &last, uint32_t idx) -> bool {
-  const auto &it = std::adjacent_find(search_begin, search_end, [idx](const sortKey &first, const sortKey &second) {
-    if (first.second.at(idx).CompareEquals(second.second.at(idx)) == CmpBool::CmpTrue) {
-      return true;
-    }
-    return false;
-  });
-
-  // 如果找到了重复的相邻元素，我们需要找到这个重复值区间的结束位置
-  if (it != search_end) {
-    // 找到重复值的起始位置
-    start = it;
-    // 跳过重复值，指向下一个可能不重复的值
-    last = it + 2;
-    while (last != search_end) {
-      if (last->second.at(idx).CompareEquals(it->second.at(idx)) == CmpBool::CmpTrue) {
-        last++;
-      } else {
-        break;
-      }
-    }
-    return true;
-  }
-  return false;
-}
-
 auto SortExecutor::Next(Tuple *tuple, RID *rid) -> bool {
-  //std::cout << "begin sort\n";
+  // std::cout << "begin sort\n";
   if (plan_->order_bys_[0].first == OrderByType::INVALID) {
     return false;
   }
@@ -72,7 +38,7 @@ auto SortExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       }
       sorted_vec_.push_back(std::make_pair(std::move(tuple_vals), std::move(evaluate_vals)));
     }
-    //std::cout << "scan over\n";
+    // std::cout << "scan over\n";
 
     int idx{0};
     auto order_by_type = plan_->order_bys_[idx].first;
@@ -91,7 +57,7 @@ auto SortExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     };
 
     std::sort(sorted_vec_.begin(), sorted_vec_.end(), Sort);
-    //std::cout << "sorted_vec_ size: " << sorted_vec_.size() << std::endl;
+    // std::cout << "sorted_vec_ size: " << sorted_vec_.size() << std::endl;
     for (const auto &i : plan_->order_bys_) {
       if (i == plan_->order_bys_[0]) {
         continue;
@@ -107,7 +73,7 @@ auto SortExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         begin = last;
       }
     }
-    //std::cout << "sort finished\n";
+    // std::cout << "sort finished\n";
     sorted_ = true;
   }
 
