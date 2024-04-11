@@ -66,6 +66,7 @@ class WindowFunctionPlanNode : public AbstractPlanNode {
                          std::vector<WindowFunctionType> window_func_types)
       : AbstractPlanNode(std::move(output_schema), {std::move(child)}), columns_(std::move(columns)) {
     for (uint32_t i = 0; i < window_func_indexes.size(); i++) {
+      //std::cout << "window_func_indexe : " << window_func_indexes[i] << std::endl;
       window_functions_[window_func_indexes[i]] =
           WindowFunction{functions[i], window_func_types[i], partition_bys[i], order_bys[i]};
     }

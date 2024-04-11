@@ -25,6 +25,16 @@
 
 namespace bustub {
 
+/*
+**windowfunctionkey : 实际输出的vector columns + aggregate 存储的key functionvalue + sort key
+*/
+struct windowKey {
+  std::vector<Value> first;
+  std::vector<Value> second;
+  std::vector<std::pair<AggregateKey, AggregateValue>> third;
+};
+using WindowFunctionKey = struct windowKey;
+
 class WindowFunctionHashTable {
  public:
   /**
@@ -40,6 +50,7 @@ class WindowFunctionHashTable {
   auto GenerateInitialAggregateValue() -> AggregateValue {
     std::vector<Value> values{};
     for (const auto &agg_type : agg_types_) {
+      //std::cout << "get tpye: " << static_cast<int>(agg_type) << std::endl;
       switch (agg_type) {
         case WindowFunctionType::CountStarAggregate:
         case WindowFunctionType::Rank:
@@ -74,6 +85,7 @@ class WindowFunctionHashTable {
     // std::cout << "size: " << result->aggregates_.size() << std::endl;
 
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
+      //std::cout << "agg_type: " << static_cast<int>(agg_types_[i]) << std::endl;
       switch (agg_types_[i]) {
         case WindowFunctionType::CountStarAggregate: {
           result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
@@ -184,13 +196,15 @@ class WindowFunctionHashTable {
   /** @return Iterator to the end of the hash table */
   auto End() -> Iterator { return Iterator{ht_.cend()}; }
 
+  auto GetMap() -> std::unordered_map<AggregateKey, AggregateValue> & { return ht_; }
+
  private:
   /** The hash table is just a map from aggregate keys to aggregate values */
   std::unordered_map<AggregateKey, AggregateValue> ht_{};
   /** The aggregate expressions that we have */
-  const std::vector<AbstractExpressionRef> &agg_exprs_;
+  const std::vector<AbstractExpressionRef> agg_exprs_;
   /** The types of aggregations that we have */
-  const std::vector<WindowFunctionType> &agg_types_;
+  const std::vector<WindowFunctionType> agg_types_;
 };
 
 /**
@@ -266,11 +280,11 @@ class WindowFunctionExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_executor_;
 
   /** table 的形式是columns + order_by*/
-  std::vector<sortKey> sorted_table_;
+  std::vector<WindowFunctionKey> sorted_table_;
 
   /** Simple aggregation hash table */
   // TODO(Student): Uncomment SimpleAggregationHashTable aht_;
-  std::vector<std::unique_ptr<WindowFunctionHashTable>> aht_vec_;
+  std::unordered_map<uint32_t, std::unique_ptr<WindowFunctionHashTable>> aht_map_;
 
   /** Simple aggregation hash table iterator */
   // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
