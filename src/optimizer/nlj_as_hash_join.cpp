@@ -60,7 +60,7 @@ auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> Abstra
   // std::cout << "nlj as hash\n";
   // std::cout << plan->ToString() << std::endl;
   // std::cout << plan->GetChildren().size() << std::endl;
-  int value = static_cast<int>(plan->GetType());
+  // int value = static_cast<int>(plan->GetType());
   // std::cout << "plan type: " << value << std::endl;
   std::vector<AbstractPlanNodeRef> children;
   for (const auto &child : plan->GetChildren()) {
@@ -69,7 +69,7 @@ auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> Abstra
     // std::cout << "herehere\n";
   }
   auto optimized_plan = plan->CloneWithChildren(std::move(children));
-  value = static_cast<int>(optimized_plan->GetType());
+  // value = static_cast<int>(optimized_plan->GetType());
 
   // std::cout << "plan type: " << value << std::endl;
 

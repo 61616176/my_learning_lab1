@@ -35,13 +35,13 @@ auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   }
 
   // check if ht_ is empty
-  bool is_empty{true};
+  // bool is_empty{true};
 
   if (is_first) {
     // aggregate 操作
     while (child_executor_->Next(tuple, rid)) {
-      is_empty = false;
-      // std::cout << "1" << std::endl;
+      // is_empty = false;
+      //  std::cout << "1" << std::endl;
 
       auto key = MakeAggregateKey(tuple);
       auto val = MakeAggregateValue(tuple);
@@ -68,8 +68,8 @@ auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   std::vector<Value> vals;
 
   if (*aht_iterator_ != aht_->End()) {
-    is_empty = false;
-    // std::cout << "3" << std::endl;
+    // is_empty = false;
+    //  std::cout << "3" << std::endl;
     if (!plan_->GetGroupBys().empty()) {
       auto key = aht_iterator_->Key().group_bys_;
       vals.insert(vals.end(), key.begin(), key.end());

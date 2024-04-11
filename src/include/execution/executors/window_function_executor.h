@@ -21,6 +21,7 @@
 #include "execution/executors/sort_executor.h"
 #include "execution/plans/window_plan.h"
 #include "storage/table/tuple.h"
+#include "execution/plans/aggregation_plan.h"
 
 namespace bustub {
 
@@ -32,7 +33,7 @@ class WindowFunctionHashTable {
    * @param agg_types the types of aggregations
    */
   WindowFunctionHashTable(const std::vector<AbstractExpressionRef> &agg_exprs,
-                          const std::vector<AggregationType> &agg_types)
+                          const std::vector<WindowFunctionType> &agg_types)
       : agg_exprs_{agg_exprs}, agg_types_{agg_types} {}
 
   /** @return The initial aggregate value for this aggregation executor */
@@ -40,14 +41,15 @@ class WindowFunctionHashTable {
     std::vector<Value> values{};
     for (const auto &agg_type : agg_types_) {
       switch (agg_type) {
-        case AggregationType::CountStarAggregate:
+        case WindowFunctionType::CountStarAggregate:
+        case WindowFunctionType::Rank:
           // Count start starts at zero.
           values.emplace_back(ValueFactory::GetIntegerValue(0));
           break;
-        case AggregationType::CountAggregate:
-        case AggregationType::SumAggregate:
-        case AggregationType::MinAggregate:
-        case AggregationType::MaxAggregate:
+        case WindowFunctionType::CountAggregate:
+        case WindowFunctionType::SumAggregate:
+        case WindowFunctionType::MinAggregate:
+        case WindowFunctionType::MaxAggregate:
           // Others starts at null.
           values.emplace_back(ValueFactory::GetNullValueByType(TypeId::INTEGER));
           break;
@@ -73,11 +75,14 @@ class WindowFunctionHashTable {
 
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
-        case AggregationType::CountStarAggregate: {
+        case WindowFunctionType::CountStarAggregate: {
           result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
           break;
         }
-        case AggregationType::CountAggregate: {
+        case WindowFunctionType::Rank: {
+          result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
+        }
+        case WindowFunctionType::CountAggregate: {
           Value val = input.aggregates_[i];
           if (!val.IsNull()) {
             if (result->aggregates_[i].IsNull()) {
@@ -88,7 +93,7 @@ class WindowFunctionHashTable {
           }
           break;
         }
-        case AggregationType::SumAggregate: {
+        case WindowFunctionType::SumAggregate: {
           Value val = input.aggregates_[i];
           if (!val.IsNull()) {
             if (result->aggregates_[i].IsNull()) {
@@ -99,7 +104,7 @@ class WindowFunctionHashTable {
           }
           break;
         }
-        case AggregationType::MinAggregate: {
+        case WindowFunctionType::MinAggregate: {
           Value val = input.aggregates_[i];
           if (!val.IsNull()) {
             if (result->aggregates_[i].IsNull()) {
@@ -110,7 +115,7 @@ class WindowFunctionHashTable {
           }
           break;
         }
-        case AggregationType::MaxAggregate: {
+        case WindowFunctionType::MaxAggregate: {
           Value val = input.aggregates_[i];
           if (!val.IsNull()) {
             if (result->aggregates_[i].IsNull()) {
@@ -131,11 +136,12 @@ class WindowFunctionHashTable {
    * @param agg_key the key to be inserted
    * @param agg_val the value to be inserted
    */
-  void InsertCombine(const AggregateKey &agg_key, const AggregateValue &agg_val) {
+  auto InsertCombine(const AggregateKey &agg_key, const AggregateValue &agg_val) -> std::vector<Value> {
     if (ht_.count(agg_key) == 0) {
       ht_.insert({agg_key, GenerateInitialAggregateValue()});
     }
     CombineAggregateValues(&ht_[agg_key], agg_val);
+    return ht_[agg_key].aggregates_;
   }
 
   /**
@@ -184,7 +190,7 @@ class WindowFunctionHashTable {
   /** The aggregate expressions that we have */
   const std::vector<AbstractExpressionRef> &agg_exprs_;
   /** The types of aggregations that we have */
-  const std::vector<AggregationType> &agg_types_;
+  const std::vector<WindowFunctionType> &agg_types_;
 };
 
 /**
@@ -249,9 +255,10 @@ class WindowFunctionExecutor : public AbstractExecutor {
   /** @return The output schema for the window aggregation plan */
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
 
-  void WindowFunctionSort(Tuple *tuple, const Schema &schema);
+  void WindowFunctionAggregateAndSort();
 
  private:
+
   /** The window aggregation plan node to be executed */
   const WindowFunctionPlanNode *plan_;
 
@@ -263,15 +270,11 @@ class WindowFunctionExecutor : public AbstractExecutor {
 
   /** Simple aggregation hash table */
   // TODO(Student): Uncomment SimpleAggregationHashTable aht_;
-  std::vector<std::vector<std::unique_ptr<SimpleAggregationHashTable>>> aht_vec_;
+  std::vector<std::unique_ptr<WindowFunctionHashTable>> aht_vec_;
 
   /** Simple aggregation hash table iterator */
   // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
-  std::unique_ptr<SimpleAggregationHashTable::Iterator> aht_iterator_;
-
-  bool sort_finished_{false};
-
-  bool aggregation_finished_{false};
+  //std::unique_ptr<SimpleAggregationHashTable::Iterator> aht_iterator_;
 
   bool status_{true};
 };

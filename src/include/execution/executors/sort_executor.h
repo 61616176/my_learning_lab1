@@ -54,40 +54,6 @@ class SortExecutor : public AbstractExecutor {
   /** @return The output schema for the sort */
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
 
-  /*
-   *start first pos of duplicate value
-   *end first pos of new value
-   *idx current idx to find duplicate value
-   *return false means that there is no more duplicate value in the rest of vector
-   */
-  auto FindDuplicateRange(const std::vector<sortKey>::iterator &search_begin,
-                          const std::vector<sortKey>::iterator &search_end, std::vector<sortKey>::iterator &start,
-                          std::vector<sortKey>::iterator &last, uint32_t idx) -> bool {
-    const auto &it = std::adjacent_find(search_begin, search_end, [idx](const sortKey &first, const sortKey &second) {
-      if (first.second.at(idx).CompareEquals(second.second.at(idx)) == CmpBool::CmpTrue) {
-        return true;
-      }
-      return false;
-    });
-
-    // 如果找到了重复的相邻元素，我们需要找到这个重复值区间的结束位置
-    if (it != search_end) {
-      // 找到重复值的起始位置
-      start = it;
-      // 跳过重复值，指向下一个可能不重复的值
-      last = it + 2;
-      while (last != search_end) {
-        if (last->second.at(idx).CompareEquals(it->second.at(idx)) == CmpBool::CmpTrue) {
-          last++;
-        } else {
-          break;
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
  private:
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
