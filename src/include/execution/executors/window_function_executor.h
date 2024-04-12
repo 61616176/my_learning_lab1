@@ -19,9 +19,9 @@
 #include "execution/executors/abstract_executor.h"
 #include "execution/executors/aggregation_executor.h"
 #include "execution/executors/sort_executor.h"
+#include "execution/plans/aggregation_plan.h"
 #include "execution/plans/window_plan.h"
 #include "storage/table/tuple.h"
-#include "execution/plans/aggregation_plan.h"
 
 namespace bustub {
 
@@ -50,11 +50,13 @@ class WindowFunctionHashTable {
   auto GenerateInitialAggregateValue() -> AggregateValue {
     std::vector<Value> values{};
     for (const auto &agg_type : agg_types_) {
-      //std::cout << "get tpye: " << static_cast<int>(agg_type) << std::endl;
+      // std::cout << "get tpye: " << static_cast<int>(agg_type) << std::endl;
       switch (agg_type) {
         case WindowFunctionType::CountStarAggregate:
+          values.emplace_back(ValueFactory::GetIntegerValue(0));
         case WindowFunctionType::Rank:
-          // Count start starts at zero.
+          // rank (rank, number) starts at zero.
+          values.emplace_back(ValueFactory::GetIntegerValue(0));
           values.emplace_back(ValueFactory::GetIntegerValue(0));
           break;
         case WindowFunctionType::CountAggregate:
@@ -85,14 +87,19 @@ class WindowFunctionHashTable {
     // std::cout << "size: " << result->aggregates_.size() << std::endl;
 
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
-      //std::cout << "agg_type: " << static_cast<int>(agg_types_[i]) << std::endl;
+      // std::cout << "agg_type: " << static_cast<int>(agg_types_[i]) << std::endl;
       switch (agg_types_[i]) {
         case WindowFunctionType::CountStarAggregate: {
           result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
           break;
         }
-        case WindowFunctionType::Rank: {
-          result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
+        case WindowFunctionType::Rank: {          
+          result->aggregates_[1] = result->aggregates_[1].Add({INTEGER, 1});
+          if (input.aggregates_[0].CompareEquals(ValueFactory::GetBooleanValue(false)) == CmpBool::CmpTrue) { //not duplicate
+            result->aggregates_[0] = result->aggregates_[1];
+          }
+          std::cout << "rank: " << result->aggregates_[i].ToString() << std::endl ;
+          break;
         }
         case WindowFunctionType::CountAggregate: {
           Value val = input.aggregates_[i];
@@ -272,7 +279,6 @@ class WindowFunctionExecutor : public AbstractExecutor {
   void WindowFunctionAggregateAndSort();
 
  private:
-
   /** The window aggregation plan node to be executed */
   const WindowFunctionPlanNode *plan_;
 
@@ -288,7 +294,7 @@ class WindowFunctionExecutor : public AbstractExecutor {
 
   /** Simple aggregation hash table iterator */
   // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
-  //std::unique_ptr<SimpleAggregationHashTable::Iterator> aht_iterator_;
+  // std::unique_ptr<SimpleAggregationHashTable::Iterator> aht_iterator_;
 
   bool status_{true};
 };
