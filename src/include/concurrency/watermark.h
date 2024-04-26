@@ -1,11 +1,13 @@
 #pragma once
 
 #include <unordered_map>
+#include <algorithm>
 
 #include "concurrency/transaction.h"
 #include "storage/table/tuple.h"
 
 namespace bustub {
+
 
 /**
  * @brief tracks all the read timestamps.
@@ -35,6 +37,11 @@ class Watermark {
   timestamp_t watermark_;
 
   std::unordered_map<timestamp_t, int> current_reads_;
+
+  // 为满足复杂度要求O(logn)，利用小顶堆来保存最小read_ts
+  std::deque<timestamp_t> sorted_;
+  std::unordered_map<timestamp_t, int> sorted_indices;
+
 };
 
 };  // namespace bustub
