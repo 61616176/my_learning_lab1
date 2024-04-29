@@ -5,14 +5,17 @@ namespace bustub {
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 
-TEST(TxnScanTest, DISABLED_TupleReconstructTest) {  // NOLINT
+TEST(TxnScanTest, TupleReconstructTest) {  // NOLINT
   auto schema = ParseCreateStatement("a integer,b double,c boolean");
   {
     fmt::println(stderr, "A: only base tuple");
     auto base_tuple = Tuple{{Int(0), Double(1), BoolNull()}, schema.get()};
     auto base_meta = TupleMeta{2333, false};
+    fmt::println(stderr, "here is right");
     auto tuple = ReconstructTuple(schema.get(), base_tuple, base_meta, {});
+    fmt::println(stderr, "here is right");
     ASSERT_TRUE(tuple.has_value());
+    fmt::println(stderr, "here is right");
     VerifyTuple(schema.get(), *tuple, {Int(0), Double(1), BoolNull()});
   }
   {

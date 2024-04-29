@@ -10,9 +10,40 @@
 
 namespace bustub {
 
+// 还没有解决delete的问题
 auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
                       const std::vector<UndoLog> &undo_logs) -> std::optional<Tuple> {
-  UNIMPLEMENTED("not implemented");
+  std::vector<Value> tuple_content;
+  tuple_content.reserve(schema->GetColumns().size());
+  fmt::println(stderr, "base tuple size: {}", base_tuple.GetLength());
+  std::cout << base_tuple.ToString(schema) << std::endl;
+  fmt::println(stderr, "in reconstrusction, here is right up");
+  for (std::size_t i = 0; i < schema->GetColumns().size(); ++i)
+  {
+    fmt::println(stderr, "the {}th times", i);
+    auto tmp = base_tuple.GetValue(schema, i);
+    fmt::println(stderr, "in reconstrusction, here is right {}", i);
+    tuple_content.push_back(tmp);
+    
+    fmt::println(stderr, "after reconstrusction, here is right {}", i);
+  }
+  fmt::println(stderr, "in reconstrusction, here is right down");
+  for (auto log : undo_logs)
+  {
+    if (log.is_deleted_) {
+      std::optional<Tuple> emp;
+      return emp;
+    }
+    uint32_t idx = 0;
+    for (std::size_t i = 0; i < tuple_content.size(); i++) {
+      if (log.modified_fields_[i]) {
+        tuple_content[i] = log.tuple_.GetValue(schema, idx++);
+      }
+    }
+  }
+
+  return std::make_optional<Tuple>(tuple_content, schema);
+  
 }
 
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,
