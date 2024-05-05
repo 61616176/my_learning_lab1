@@ -13,36 +13,42 @@ namespace bustub {
 // 还没有解决delete的问题
 auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
                       const std::vector<UndoLog> &undo_logs) -> std::optional<Tuple> {
+  std::optional<Tuple> res;
   std::vector<Value> tuple_content;
   tuple_content.reserve(schema->GetColumns().size());
-  fmt::println(stderr, "base tuple size: {}", base_tuple.GetLength());
-  std::cout << base_tuple.ToString(schema) << std::endl;
-  fmt::println(stderr, "in reconstrusction, here is right up");
   for (std::size_t i = 0; i < schema->GetColumns().size(); ++i)
   {
-    fmt::println(stderr, "the {}th times", i);
     auto tmp = base_tuple.GetValue(schema, i);
-    fmt::println(stderr, "in reconstrusction, here is right {}", i);
-    tuple_content.push_back(tmp);
-    
-    fmt::println(stderr, "after reconstrusction, here is right {}", i);
+    tuple_content.push_back(tmp);    
   }
-  fmt::println(stderr, "in reconstrusction, here is right down");
+  if (!base_meta.is_deleted_) {
+    res.emplace(tuple_content, schema);
+  }
+
   for (auto log : undo_logs)
   {
     if (log.is_deleted_) {
-      std::optional<Tuple> emp;
-      return emp;
+      res.reset();
+      continue;
     }
+
     uint32_t idx = 0;
+    std::vector<Column> cols;
     for (std::size_t i = 0; i < tuple_content.size(); i++) {
       if (log.modified_fields_[i]) {
-        tuple_content[i] = log.tuple_.GetValue(schema, idx++);
+        cols.push_back(schema->GetColumn(i));
       }
     }
+    Schema log_schema(cols);
+    for (std::size_t i = 0; i < tuple_content.size(); i++) {
+      if (log.modified_fields_[i]) {
+        tuple_content[i] = log.tuple_.GetValue(&log_schema, idx++);
+      }
+    }
+    res.emplace(tuple_content, schema);
   }
 
-  return std::make_optional<Tuple>(tuple_content, schema);
+  return res;
   
 }
 

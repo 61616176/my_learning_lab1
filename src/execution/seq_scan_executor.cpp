@@ -36,8 +36,11 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
 
     if (scanned_tuple.first.is_deleted_) {
       ++(*iter_ptr_);
-      // return true;
-      // std::cout << "deleted" << std::endl;
+      continue;
+    }
+
+    if (scanned_tuple.first.ts_ > exec_ctx_->GetTransaction()->GetReadTs()/*当前事务的时间戳*/) {
+      ++(*iter_ptr_);
       continue;
     }
 
