@@ -16,17 +16,15 @@ auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const Tuple
   std::optional<Tuple> res;
   std::vector<Value> tuple_content;
   tuple_content.reserve(schema->GetColumns().size());
-  for (std::size_t i = 0; i < schema->GetColumns().size(); ++i)
-  {
+  for (std::size_t i = 0; i < schema->GetColumns().size(); ++i) {
     auto tmp = base_tuple.GetValue(schema, i);
-    tuple_content.push_back(tmp);    
+    tuple_content.push_back(tmp);
   }
   if (!base_meta.is_deleted_) {
     res.emplace(tuple_content, schema);
   }
 
-  for (auto log : undo_logs)
-  {
+  for (auto log : undo_logs) {
     if (log.is_deleted_) {
       res.reset();
       continue;
@@ -49,7 +47,6 @@ auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const Tuple
   }
 
   return res;
-  
 }
 
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,

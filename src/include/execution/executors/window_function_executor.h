@@ -93,12 +93,13 @@ class WindowFunctionHashTable {
           result->aggregates_[i] = result->aggregates_[i].Add({INTEGER, 1});
           break;
         }
-        case WindowFunctionType::Rank: {          
+        case WindowFunctionType::Rank: {
           result->aggregates_[1] = result->aggregates_[1].Add({INTEGER, 1});
-          if (input.aggregates_[0].CompareEquals(ValueFactory::GetBooleanValue(false)) == CmpBool::CmpTrue) { //not duplicate
+          if (input.aggregates_[0].CompareEquals(ValueFactory::GetBooleanValue(false)) ==
+              CmpBool::CmpTrue) {  // not duplicate
             result->aggregates_[0] = result->aggregates_[1];
           }
-          std::cout << "rank: " << result->aggregates_[i].ToString() << std::endl ;
+          std::cout << "rank: " << result->aggregates_[i].ToString() << std::endl;
           break;
         }
         case WindowFunctionType::CountAggregate: {

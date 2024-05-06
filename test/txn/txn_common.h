@@ -318,6 +318,7 @@ auto CommitTxn(BustubInstance &instance, const std::string &txn_var_name, Transa
     std::terminate();
   }
   auto res = instance.txn_manager_->Commit(txn);
+  fmt::println(stderr, "3");
   if (!expect_fail) {
     if (!res) {
       fmt::println(stderr, "failed to commit txn: var={} id={}", txn_var_name, txn->GetTransactionId());

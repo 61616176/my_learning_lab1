@@ -45,8 +45,11 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     // if (child_tuple.GetData() == nullptr) {
     //  continue;
     //}
-    std::optional<RID> optional_res = table_info->table_->InsertTuple({0, false}, child_tuple);
+    timestamp_t ts = exec_ctx_->GetTransaction()->GetTransactionTempTs();
+    std::optional<RID> optional_res = table_info->table_->InsertTuple({ts, false}, child_tuple);
     BUSTUB_ASSERT(optional_res.has_value(), "fail to insert to tableheap");
+    exec_ctx_->GetTransactionManager()->UpdateVersionLink(*rid, std::nullopt);
+    exec_ctx_->GetTransaction()->AppendWriteSet(plan_->GetTableOid(), *rid);
 
     Schema &tuple_schema = table_info->schema_;
     std::vector<Column> tuple_columns = tuple_schema.GetColumns();

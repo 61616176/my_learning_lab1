@@ -55,8 +55,8 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
     uint32_t col_idx{0};
     for (const auto &col : plan_->columns_) {
       // aggregate
-      std::cout <<"col type : " <<col->ToString() <<std::endl;
-      if (col->ToString() == "#0.4294967295") { // 假定这个值是placeholder的标志
+      std::cout << "col type : " << col->ToString() << std::endl;
+      if (col->ToString() == "#0.4294967295") {  // 假定这个值是placeholder的标志
         //在这一步insertcombine？
         // windowfunctionkey_second.push_back(GenerateInitialWindowFunctionValue(plan_->window_functions_[idx++].type_))
         auto &window_function = plan_->window_functions_.at(col_idx);
@@ -64,9 +64,11 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
         AggregateKey key;
         AggregateValue value;
         for (const auto &partition_by : window_function.partition_by_) {
-          std::cout << "window function type: " << static_cast<int>(window_function.type_) << "window function partiton: " << partition_by->ToString() << std::endl; 
+          std::cout << "window function type: " << static_cast<int>(window_function.type_)
+                    << "window function partiton: " << partition_by->ToString() << std::endl;
           key.group_bys_.push_back(partition_by->Evaluate(&child_tuple, schema));
-          std::cout << "col index: " << col_idx  << "partition key: " << partition_by->Evaluate(&child_tuple, schema).ToString() << std::endl;
+          std::cout << "col index: " << col_idx
+                    << "partition key: " << partition_by->Evaluate(&child_tuple, schema).ToString() << std::endl;
         }
         key_for_empty_insert[col_idx] = key;
 
@@ -78,7 +80,7 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
         if (first_flag) {
           window_indeces.push_back(col_idx);
         }
-        
+
         //插入对应的aht_map_中
         //读取值插入table中, 确定只返回一个Value
 
@@ -142,7 +144,7 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
   //取值插入sort_table.first对应的index里
   std::cout << "row size: " << sorted_table_.front().first.size() << std::endl;
 
-  for (auto row=sorted_table_.begin(); row != sorted_table_.end(); row++) {
+  for (auto row = sorted_table_.begin(); row != sorted_table_.end(); row++) {
     auto &window_function_keys = row->third;
     uint32_t idx{0};
     for (auto &window_function_key : window_function_keys) {
@@ -150,32 +152,32 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
       std::cout << "window index:" << window_index << std::endl;
       if (plan_->window_functions_.at(window_index).type_ == WindowFunctionType::Rank) {
         std::cout << "rank\n";
-        //deal with previous row
+        // deal with previous row
         AggregateValue rank_value;
-        auto IsDuplicate = [](std::vector<Value> first, std::vector<Value> second) -> bool{
-          for (uint32_t idx=0; idx != first.size(); idx++) {
+        auto IsDuplicate = [](std::vector<Value> first, std::vector<Value> second) -> bool {
+          for (uint32_t idx = 0; idx != first.size(); idx++) {
             if (first.at(idx).CompareEquals(second.at(idx)) == CmpBool::CmpTrue) {
               continue;
-            } else {              
+            } else {
               return false;
             }
           }
           return true;
         };
-        //std::cout << "previous size: " << (row-1)->second.size() << " now size: " << row->second.size() << std::endl;
+        // std::cout << "previous size: " << (row-1)->second.size() << " now size: " << row->second.size() << std::endl;
         if (row == sorted_table_.begin()) {
           rank_value.aggregates_ = {ValueFactory::GetBooleanValue(false)};
         } else {
-          if (IsDuplicate((row-1)->second, row->second)) {
+          if (IsDuplicate((row - 1)->second, row->second)) {
             rank_value.aggregates_ = {ValueFactory::GetBooleanValue(true)};
-            std::cout <<"is duplicate\n";
+            std::cout << "is duplicate\n";
           } else {
             rank_value.aggregates_ = {ValueFactory::GetBooleanValue(false)};
-            std::cout <<"not duplicate\n";
-          } 
+            std::cout << "not duplicate\n";
+          }
         }
-        auto res = aht_map_[window_index]->InsertCombine(window_function_key.first, /*duplicate_signature*/rank_value);
-        row->first.at(window_index) = res[0];        
+        auto res = aht_map_[window_index]->InsertCombine(window_function_key.first, /*duplicate_signature*/ rank_value);
+        row->first.at(window_index) = res[0];
       } else {
         auto res = aht_map_[window_index]->InsertCombine(window_function_key.first, window_function_key.second);
         row->first.at(window_index) = res[0];
@@ -186,11 +188,13 @@ void WindowFunctionExecutor::WindowFunctionAggregateAndSort() {
 
   if (plan_->window_functions_.at(window_indeces[0]).order_by_.empty()) {
     for (auto &row : sorted_table_) {
-      std::cout <<window_indeces.size() <<std::endl;
-      for (uint32_t idx=0; idx != window_indeces.size(); idx++) {
-        //if (!plan_->window_functions_.at(window_indeces.at(idx)).partition_by_.empty())
-        //  std::cout << "window index: " << window_indeces.at(idx) << " partition key: " << key.second.group_bys_[0].ToString() <<std::endl;
-        row.first.at(window_indeces.at(idx)) = aht_map_[window_indeces.at(idx)]->GetMap().at(row.third.at(idx).first).aggregates_.at(0);
+      std::cout << window_indeces.size() << std::endl;
+      for (uint32_t idx = 0; idx != window_indeces.size(); idx++) {
+        // if (!plan_->window_functions_.at(window_indeces.at(idx)).partition_by_.empty())
+        //   std::cout << "window index: " << window_indeces.at(idx) << " partition key: " <<
+        //   key.second.group_bys_[0].ToString() <<std::endl;
+        row.first.at(window_indeces.at(idx)) =
+            aht_map_[window_indeces.at(idx)]->GetMap().at(row.third.at(idx).first).aggregates_.at(0);
       }
     }
   }
@@ -212,7 +216,7 @@ void WindowFunctionExecutor::Init() {
     std::vector<WindowFunctionType> type = {window_function.second.type_};
     auto aht = std::make_unique<WindowFunctionHashTable>(function, type);
     aht_map_[window_function.first] = std::move(aht);
-    std::cout <<"insert aht_map_ index : " << window_function.first <<std::endl;
+    std::cout << "insert aht_map_ index : " << window_function.first << std::endl;
   }
 
   // aggregate and sort

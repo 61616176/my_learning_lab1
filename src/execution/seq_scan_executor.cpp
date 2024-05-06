@@ -46,57 +46,69 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     }
 
     // 判断是否删除应该放在重建tuple 的 部分完成
-    //if (scanned_tuple.first.is_deleted_) {
+    // if (scanned_tuple.first.is_deleted_) {
     //  ++(*iter_ptr_);
     //  continue;
     //}
 
-    if (scanned_tuple.first.ts_ > exec_ctx_->GetTransaction()->GetReadTs()/*当前事务的时间戳*/) {
-      // 此时应该重建 之前版本的tuple
-      // 找到合适的 undo log 调用 ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
-      //                                          const std::vector<UndoLog> &undo_logs)
-      fmt::println(stderr, "timestamp: {} vs {}", scanned_tuple.first.ts_, exec_ctx_->GetTransaction()->GetReadTs());
-      auto optional_undo_link = exec_ctx_->GetTransactionManager()->GetUndoLink(scanned_tuple.second.GetRid());
-      if (optional_undo_link.has_value()) {
-        auto undo_link = *optional_undo_link;
-        std::vector<UndoLog> logs;
-        
-        bool is_arrived{false};
-        // 找到第一个小于等于当前ts的log
-        do {
-          auto undo_log = exec_ctx_->GetTransactionManager()->GetUndoLog(undo_link);
-          
+    if (scanned_tuple.first.ts_ > exec_ctx_->GetTransaction()->GetReadTs() /*当前事务的时间戳*/) {
+      // temporary tuple
+      if (scanned_tuple.first.ts_ == exec_ctx_->GetTransaction()->GetTransactionTempTs()) {
+        *tuple = scanned_tuple.second;
+      } else {
+        // 此时应该重建 之前版本的tuple
+        // 找到合适的 undo log 调用 ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta
+        // &base_meta,
+        //                                          const std::vector<UndoLog> &undo_logs)
+        fmt::println(stderr, "timestamp: {} vs {}", scanned_tuple.first.ts_, exec_ctx_->GetTransaction()->GetReadTs());
+        auto optional_undo_link = exec_ctx_->GetTransactionManager()->GetUndoLink(scanned_tuple.second.GetRid());
+        if (optional_undo_link.has_value()) {
+          auto undo_link = *optional_undo_link;
+          std::vector<UndoLog> logs;
+
+          bool is_arrived{false};
+          // 找到第一个小于等于当前ts的log
+          do {
+            auto undo_log = exec_ctx_->GetTransactionManager()->GetUndoLog(undo_link);
+
             logs.push_back(undo_log);
-          if (undo_log.ts_ <= exec_ctx_->GetTransaction()->GetReadTs()) {
-            is_arrived = true;
-            break;
+            if (undo_log.ts_ <= exec_ctx_->GetTransaction()->GetReadTs()) {
+              is_arrived = true;
+              break;
+            }
+            undo_link = undo_log.prev_version_;
+          } while (undo_link.IsValid());
+
+          if (!is_arrived) {
+            ++(*iter_ptr_);
+            fmt::print(stderr, "if it's 2 tuple, supposed to go here\n");
+            continue;
           }
-          undo_link = undo_log.prev_version_;
-        } while(undo_link.IsValid());
 
-        if (!is_arrived) {
-          ++(*iter_ptr_);
-          continue;
-        }
+          // for (auto iter : *optional_undo_link) {
+          //   if (iter->ts_ > exec_ctx_->GetTransaction()->GetReadTs()) {
+          //     logs.push_back(*iter);
+          //  }
+          // }
 
-        //for (auto iter : *optional_undo_link) {
-        //  if (iter->ts_ > exec_ctx_->GetTransaction()->GetReadTs()) {
-        //    logs.push_back(*iter);
-        // }
-        //}
-
-        auto reconstruct_tuple = ReconstructTuple(&GetOutputSchema(), scanned_tuple.second, scanned_tuple.first, logs);
-        if (reconstruct_tuple.has_value()) {
-          *tuple = *reconstruct_tuple;
+          auto reconstruct_tuple =
+              ReconstructTuple(&GetOutputSchema(), scanned_tuple.second, scanned_tuple.first, logs);
+          if (reconstruct_tuple.has_value()) {
+            *tuple = *reconstruct_tuple;
+          } else {
+            ++(*iter_ptr_);
+            continue;
+          }
         } else {
           ++(*iter_ptr_);
           continue;
         }
-      } 
+      }
     } else {
       *tuple = scanned_tuple.second;
     }
-    
+
+    fmt::print(stderr, "here is a check time\n");
     *rid = iter_ptr_->GetRID();
     ++(*iter_ptr_);
     return true;

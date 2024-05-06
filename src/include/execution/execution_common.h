@@ -1,8 +1,8 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "catalog/catalog.h"
 #include "catalog/schema.h"
