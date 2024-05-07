@@ -55,7 +55,7 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
   std::unique_lock<std::mutex> commit_lck(commit_mutex_);
 
   // TODO(fall2023): acquire commit ts!
-  timestamp_t commit_ts = last_commit_ts_.load();
+  timestamp_t commit_ts = last_commit_ts_.load() + 1;
 
   if (txn->state_ != TransactionState::RUNNING) {
     throw Exception("txn not in running state");
@@ -72,11 +72,11 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
   // TODO(fall2023): Implement the commit logic!
   for (auto &t : txn->GetWriteSets()) {
     auto t_id = t.first;
-    std::cout  << "t_id: "<< t_id << std::endl;
+    std::cout << "t_id: " << t_id << std::endl;
     auto table_info = catalog_->GetTable(t_id);
     for (auto rid : t.second) {
       table_info->table_->UpdateTupleMeta({commit_ts, 0}, rid);
-    }    
+    }
   }
 
   std::unique_lock<std::shared_mutex> lck(txn_map_mutex_);

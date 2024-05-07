@@ -47,11 +47,8 @@ TEST(TxnExecutorTest, InsertCommitTest) {  // NOLINT
   WithTxn(txn1, QueryShowResult(*bustub, _var, _txn, query, IntResult{{1}}));
   fmt::println(stderr, "B: check scan txn2");
   WithTxn(txn2, QueryShowResult(*bustub, _var, _txn, query, IntResult{{2}}));
-  fmt::println(stderr, "1");
   WithTxn(txn1, CommitTxn(*bustub, _var, _txn));
-  fmt::println(stderr, "1");
   TxnMgrDbg("after commit txn1", bustub->txn_manager_.get(), table_info, table_info->table_.get());
-  fmt::println(stderr, "2");
 
   auto txn_ref = BeginTxn(*bustub, "txn_ref");
 

@@ -54,25 +54,55 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
   // always use stderr for printing logs...
   fmt::println(stderr, "debug_hook: {}", info);
 
-  fmt::println(
-      stderr,
-      "You see this line of text because you have not implemented `TxnMgrDbg`. You should do this once you have "
-      "finished task 2. Implementing this helper function will save you a lot of time for debugging in later tasks.");
+  auto iter = table_heap->MakeIterator();
 
-  // We recommend implementing this function as traversing the table heap and print the version chain. An example output
-  // of our reference solution:
-  //
-  // debug_hook: before verify scan
-  // RID=0/0 ts=txn8 tuple=(1, <NULL>, <NULL>)
-  //   txn8@0 (2, _, _) ts=1
-  // RID=0/1 ts=3 tuple=(3, <NULL>, <NULL>)
-  //   txn5@0 <del> ts=2
-  //   txn3@0 (4, <NULL>, <NULL>) ts=1
-  // RID=0/2 ts=4 <del marker> tuple=(<NULL>, <NULL>, <NULL>)
-  //   txn7@0 (5, <NULL>, <NULL>) ts=3
-  // RID=0/3 ts=txn6 <del marker> tuple=(<NULL>, <NULL>, <NULL>)
-  //   txn6@0 (6, <NULL>, <NULL>) ts=2
-  //   txn3@1 (7, _, _) ts=1
-}
+  while (!iter.IsEnd()) {
+    fmt::print(stderr, "hhhhh\n");
+    fmt::print(stderr, "RID: {}", iter.GetRID().ToString());
+    auto tuple_pair = iter.GetTuple();
+    fmt::println(stderr, " ts={} tuple={}", tuple_pair.first.ts_, tuple_pair.second.ToString(&table_info->schema_));
+
+    auto optional_undo_link = txn_mgr->GetUndoLink(iter.GetRID());
+    // if 在这里似乎没有起作用
+    if (optional_undo_link.has_value()) {
+      auto undo_link = *optional_undo_link;
+      std::vector<UndoLog> logs;
+
+      // 找到第一个小于等于当前ts的log
+      do {
+        fmt::print(stderr, " txn{}@ ", undo_link.prev_txn_);
+        auto undo_log = txn_mgr->GetUndoLog(undo_link);
+        fmt::print(stderr, "{} {} {}", undo_log.is_deleted_, undo_log.tuple_.ToString(&table_info->schema_), undo_log.ts_);
+        
+        undo_link = undo_log.prev_version_;
+      } while (undo_link.IsValid());
+
+    } else {
+      fmt::println(stderr, "no undo log");
+    }
+    ++iter;
+    fmt::print(stderr, "\n");
+  }
+
+    ///fmt::println(
+    //    stderr,
+    //    "You see this line of text because you have not implemented `TxnMgrDbg`. You should do this once you have "
+    //    "finished task 2. Implementing this helper function will save you a lot of time for debugging in later tasks.");
+
+    // We recommend implementing this function as traversing the table heap and print the version chain. An example
+    // output of our reference solution:
+    //
+    // debug_hook: before verify scan
+    // RID=0/0 ts=txn8 tuple=(1, <NULL>, <NULL>)
+    //   txn8@0 (2, _, _) ts=1
+    // RID=0/1 ts=3 tuple=(3, <NULL>, <NULL>)
+    //   txn5@0 <del> ts=2
+    //   txn3@0 (4, <NULL>, <NULL>) ts=1
+    // RID=0/2 ts=4 <del marker> tuple=(<NULL>, <NULL>, <NULL>)
+    //   txn7@0 (5, <NULL>, <NULL>) ts=3
+    // RID=0/3 ts=txn6 <del marker> tuple=(<NULL>, <NULL>, <NULL>)
+    //   txn6@0 (6, <NULL>, <NULL>) ts=2
+    //   txn3@1 (7, _, _) ts=1
+  }
 
 }  // namespace bustub
