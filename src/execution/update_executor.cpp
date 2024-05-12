@@ -38,21 +38,67 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
 
   const Schema &tuple_schema = child_executor_->GetOutputSchema();
 
+  
+
   while (child_executor_->Next(&child_tuple, &child_tuple_rid)) {
     // delete the tuple by setting is_deleted_ = true
-    table_info->table_->UpdateTupleMeta({0, true}, child_tuple_rid);
+    // table_info->table_->UpdateTupleMeta({0, true}, child_tuple_rid);
 
-    // change the tuple
+    // 构建undo_log
+    auto txn_mgr = exec_ctx_->GetTransactionManager();
+      // change the tuple
     std::vector<Value> new_values = {};
     for (auto i : plan_->target_expressions_) {
       new_values.push_back(i->Evaluate(&child_tuple, tuple_schema));
     }
-
     Tuple new_tuple(new_values, &tuple_schema);
 
+    std::vector<Value> old_values = {};
+    for (uint32_t idx = 0; idx < tuple_schema.GetColumnCount(); idx++) {
+        old_values.push_back(child_tuple.GetValue(&tuple_schema, idx));
+    }
+    std::vector<bool> modified_fields;
+    std::vector<Value> modified_value;
+    std::vector<Column> modified_cols;
+    uint32_t col_idx(0);
+    for (auto iter_new = new_values.cbegin(), iter_old = old_values.cbegin(); iter_new != new_values.cend(); iter_new++, iter_old++) {
+      if (iter_new->CompareNotEquals(*iter_old) == CmpBool::CmpTrue) {
+        modified_fields.push_back(true);
+        modified_value.push_back(*iter_old);
+        modified_cols.push_back(tuple_schema.GetColumn(col_idx));
+      } else {
+        modified_fields.push_back(false);
+      }
+      col_idx ++;
+    }
+    Schema modified_schema(modified_cols); // 局部的schema如何保存的？
+    Tuple modified(modified_value, &modified_schema);
+    timestamp_t ts = table_info->table_->GetTupleMeta(child_tuple_rid).ts_;
+    auto is_undo_link = txn_mgr->GetUndoLink(child_tuple_rid);
+    UndoLink prev_version;
+    if (is_undo_link.has_value()) {
+      prev_version = *is_undo_link;
+    }
+    UndoLog undo_log{false, modified_fields, modified, ts, prev_version};
+
+    UndoLink undo_link{exec_ctx_->GetTransaction()->GetTransactionId(), 0};
+    // 修改version link
+    // 如果上传的undolink ， 那么是如何去保存undo log 的呢
+    if (!txn_mgr->UpdateUndoLink(child_tuple_rid, std::optional(std::move(undo_link)))) {
+      return false;
+    }
+
+    // updateInplace
+    timestamp_t tmp_ts = exec_ctx_->GetTransaction()->GetTransactionTempTs();
+    if (!table_info->table_->UpdateTupleInPlace({tmp_ts, 0}, new_tuple, child_tuple_rid)) {
+      return false;
+    }
+
+    
+    // 下面的应该是要被删除的
     // insert tuple to table
-    std::optional<RID> optional_res = table_info->table_->InsertTuple({0, false}, new_tuple);
-    BUSTUB_ASSERT(optional_res.has_value(), "fail to insert to tableheap");
+    // std::optional<RID> optional_res = table_info->table_->InsertTuple({0, false}, new_tuple);
+    // BUSTUB_ASSERT(optional_res.has_value(), "fail to insert to tableheap");
 
     Schema &tuple_schema = table_info->schema_;
     std::vector<Column> tuple_columns = tuple_schema.GetColumns();
@@ -77,7 +123,7 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       Tuple new_key(new_key_vals, &index_schema);
       Tuple deleted_key(deleted_key_vals, &index_schema);
       index_info->index_->DeleteEntry(deleted_key, child_tuple_rid, nullptr);
-      BUSTUB_ASSERT(index_info->index_->InsertEntry(new_key, *optional_res, nullptr), "fail to insert to index");
+      BUSTUB_ASSERT(index_info->index_->InsertEntry(new_key, child_tuple_rid, nullptr), "fail to insert to index");
     }
 
     updated_tuple_number++;

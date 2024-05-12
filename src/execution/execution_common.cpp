@@ -37,7 +37,7 @@ auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const Tuple
         cols.push_back(schema->GetColumn(i));
       }
     }
-    Schema log_schema(cols);
+    Schema log_schema(cols); // 本地的log schema 怎么保存的？后期tuple不会读不出来吗？
     for (std::size_t i = 0; i < tuple_content.size(); i++) {
       if (log.modified_fields_[i]) {
         tuple_content[i] = log.tuple_.GetValue(&log_schema, idx++);

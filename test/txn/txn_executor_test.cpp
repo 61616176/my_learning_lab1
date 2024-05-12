@@ -186,7 +186,7 @@ TEST(TxnExecutorTest, DISABLED_InsertDeleteConflictTest) {  // NOLINT
   WithTxn(txn7, CommitTxn(*bustub, _var, _txn));
 }
 
-TEST(TxnExecutorTest, DISABLED_UpdateTest1) {  // NOLINT
+TEST(TxnExecutorTest, UpdateTest1) {  // NOLINT
   fmt::println(stderr, "--- UpdateTest1: no undo log ---");
   auto bustub = std::make_unique<BustubInstance>();
   auto empty_table = IntResult{};
