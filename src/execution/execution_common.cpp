@@ -25,6 +25,7 @@ auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const Tuple
   }
 
   for (auto log : undo_logs) {
+    fmt::print(stderr, "construct\n");
     if (log.is_deleted_) {
       res.reset();
       continue;
@@ -60,7 +61,8 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
     fmt::print(stderr, "hhhhh\n");
     fmt::print(stderr, "RID: {}", iter.GetRID().ToString());
     auto tuple_pair = iter.GetTuple();
-    fmt::println(stderr, " ts={} tuple={}", tuple_pair.first.ts_, tuple_pair.second.ToString(&table_info->schema_));
+    fmt::println(stderr, " ts={} tuple={} is_delete={}", tuple_pair.first.ts_,
+                 tuple_pair.second.ToString(&table_info->schema_), tuple_pair.first.is_deleted_);
 
     auto optional_undo_link = txn_mgr->GetUndoLink(iter.GetRID());
     // if 在这里似乎没有起作用
@@ -81,7 +83,8 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
         }
         auto part_of_schema = Schema::CopySchema(&table_info->schema_, modified_cols);
 
-        fmt::print(stderr, "{} {} {}", undo_log.is_deleted_, undo_log.tuple_.ToString(&part_of_schema), undo_log.ts_);
+        fmt::print(stderr, "is deleted:{} tuple:{} ts:{}", undo_log.is_deleted_,
+                   undo_log.tuple_.ToString(&part_of_schema), undo_log.ts_);
 
         undo_link = undo_log.prev_version_;
       } while (undo_link.IsValid());

@@ -39,6 +39,7 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   const Schema &tuple_schema = child_executor_->GetOutputSchema();
 
   while (child_executor_->Next(&child_tuple, &child_tuple_rid)) {
+    fmt::print(stderr, "begin\n");
     // delete the tuple by setting is_deleted_ = true
     // table_info->table_->UpdateTupleMeta({0, true}, child_tuple_rid);
     // change the tuple
@@ -60,7 +61,6 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       continue;
     }
 
-
     // 判断当前修改了的内容
     std::vector<Value> old_values = {};
     for (uint32_t idx = 0; idx < tuple_schema.GetColumnCount(); idx++) {
@@ -77,32 +77,82 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         modified_value.push_back(*iter_old);
         modified_cols.push_back(col_idx);
       } else {
+        //modified_value.emplace(TypeId:INVALID);
         modified_fields.push_back(false);
       }
       col_idx++;
     }
-
+      for (auto i : modified_cols) {
+          fmt::print(stderr, " {}", i);
+        }
+        fmt::println(stderr, "size: {}", modified_cols.size());
+        std::cerr << std::endl;
+    fmt::print(stderr, "succeed foing here\n");
     if (ts == tmp_ts) {
+      fmt::print(stderr, "self modification\n");
       // 检查是否是新插入tuple
       auto undo_link = txn_mgr->GetUndoLink(child_tuple_rid);
       if (std::nullopt != undo_link) {
-        // 
+        fmt::println(stderr, "begin update undo log");
         auto undo_log = txn_mgr->GetUndoLog(*undo_link);
-        for (uint32_t idx=0; idx<undo_log.modified_fields_.size(); idx++) {
+        // get undo log schema
+        std::vector<uint32_t> log_cols;
+        std::vector<Value> log_vals;
+        for (uint32_t idx = 0; idx < undo_log.modified_fields_.size(); idx++) {
           if (undo_log.modified_fields_[idx]) {
-            modified_fields[idx] = true;
-            modified_cols.push_back(col_idx);
+            log_cols.push_back(idx);
+            
           }
         }
+        auto log_schema = Scheam::CopySchema(&tuple_schema, log_cols);
+        // 修改filed、value、cols
+        for (auto col : modified_cols) {
+          if (std::count(modified_cols.cbegin(), modified_cols.cend(), col) == 0) {
+            // 插入
+            // modified_cols 和 modified_values 一一对应
+            auto iter_col = modified_cols.begin();
+            auto iter_val = modified_value.begin();
+            auto iter = std::find_if(modified_cols.begin(), modified_cols.end(), [col](auto i){
+              if (i < col)
+                return true;
+            })
+            log_cols.insert(iter, col);
+            modified_value.insert(iter_val + (iter-iter_col), )
+          } else {
+            // 复制
+          }
+        }
+        for (uint32_t idx = 0; idx < undo_log.modified_fields_.size(); idx++) {
+          if (undo_log.modified_fields_[idx]) {
+            if (std::count(modified_cols.cbegin(), modified_cols.cend(), idx) == 0) {
+              // 加入
+              //fmt::print(stderr, "here {}\n", std::count(modified_cols.cend(), modified_cols.cend(), idx));
+              modified_fields[idx] = true;
+              modified_cols.push_back(idx);
+              modified_value[idx] = undo_log.tuple_. 
+            } else {
+              // 替换成log 种的
+            }
+            
+          }
+        }
+        for (auto i : modified_cols) {
+          fmt::print(stderr, " {}", i);
+        }
+        std::cerr << std::endl;
+
+        fmt::println(stderr, "begin copy schema");
         auto modified_schema = Schema::CopySchema(&tuple_schema, modified_cols);
+        fmt::println(stderr, "finish copy schema");
         Tuple modified(modified_value, &modified_schema);
-        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, modified, ts, undo_log.prev_version_};
-        
+        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, modified, undo_log.ts_, undo_log.prev_version_};
+        fmt::println(stderr, "update undo log");
         exec_ctx_->GetTransaction()->ModifyUndoLog(undo_link->prev_log_idx_, new_undo_log);
+        fmt::println(stderr, "finish update undo log");
       }
     } else {
       // 创建新的undo log
-      
+      fmt::print(stderr, "create new log\n");
       auto modified_schema = Schema::CopySchema(&tuple_schema, modified_cols);
       Tuple modified(modified_value, &modified_schema);
       auto is_undo_link = txn_mgr->GetUndoLink(child_tuple_rid);

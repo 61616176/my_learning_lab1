@@ -75,7 +75,8 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
     std::cout << "t_id: " << t_id << std::endl;
     auto table_info = catalog_->GetTable(t_id);
     for (auto rid : t.second) {
-      table_info->table_->UpdateTupleMeta({commit_ts, 0}, rid);
+      auto is_delete = table_info->table_->GetTupleMeta(rid).is_deleted_;
+      table_info->table_->UpdateTupleMeta({commit_ts, is_delete}, rid);
     }
   }
 

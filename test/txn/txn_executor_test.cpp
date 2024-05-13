@@ -243,7 +243,9 @@ TEST(TxnExecutorTest, UpdateTest1) {  // NOLINT
   WithTxn(txn1, ExecuteTxn(*bustub, _var, _txn, "DELETE from table1"));
   TxnMgrDbg("after update", bustub->txn_manager_.get(), table_info, table_info->table_.get());
   WithTxn(txn1, QueryShowResult(*bustub, _var, _txn, query, empty_table));
+  fmt::print(stderr, "here finish txn1\n");
   WithTxn(txn_ref, QueryShowResult(*bustub, _var, _txn, query, empty_table));
+  fmt::print(stderr, "here finish txn ref\n");
   WithTxn(txn1, CheckUndoLogNum(*bustub, _var, _txn, 0));
   WithTxn(txn1, CommitTxn(*bustub, _var, _txn));
   auto txn2 = BeginTxn(*bustub, "txn2");
@@ -253,7 +255,7 @@ TEST(TxnExecutorTest, UpdateTest1) {  // NOLINT
   TableHeapEntryNoMoreThan(*bustub, table_info, 1);
 }
 
-TEST(TxnExecutorTest, DISABLED_UpdateTest2) {  // NOLINT
+TEST(TxnExecutorTest, UpdateTest2) {  // NOLINT
   fmt::println(stderr, "--- UpdateTest2: update applied on insert ---");
   auto bustub = std::make_unique<BustubInstance>();
   auto empty_table = IntResult{};
@@ -273,7 +275,9 @@ TEST(TxnExecutorTest, DISABLED_UpdateTest2) {  // NOLINT
   WithTxn(txn_ref, QueryShowResult(*bustub, _var, _txn, query, IntResult{{1, 1, 1}}));
   WithTxn(txn1, CheckUndoLogColumn(*bustub, _var, _txn, 1));
   fmt::println(stderr, "B: 2nd update");
+  TxnMgrDbg("after update", bustub->txn_manager_.get(), table_info, table_info->table_.get());
   WithTxn(txn1, ExecuteTxn(*bustub, _var, _txn, "UPDATE table2 SET b = 3"));
+  fmt::print(stderr, "finish 2nd updatee\n");
   TxnMgrDbg("after update", bustub->txn_manager_.get(), table_info, table_info->table_.get());
   WithTxn(txn1, QueryShowResult(*bustub, _var, _txn, query, IntResult{{1, 3, 1}}));
   WithTxn(txn_ref, QueryShowResult(*bustub, _var, _txn, query, IntResult{{1, 1, 1}}));

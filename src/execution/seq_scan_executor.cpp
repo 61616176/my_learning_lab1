@@ -54,6 +54,12 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
     if (scanned_tuple.first.ts_ > exec_ctx_->GetTransaction()->GetReadTs() /*当前事务的时间戳*/) {
       // temporary tuple
       if (scanned_tuple.first.ts_ == exec_ctx_->GetTransaction()->GetTransactionTempTs()) {
+        fmt::print(stderr, "same transaction\n");
+        if (scanned_tuple.first.is_deleted_) {
+          fmt::print(stderr, "delted\n");
+          ++(*iter_ptr_);
+          continue;
+        }
         *tuple = scanned_tuple.second;
       } else {
         // 此时应该重建 之前版本的tuple
@@ -63,6 +69,7 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         fmt::println(stderr, "timestamp: {} vs {}", scanned_tuple.first.ts_, exec_ctx_->GetTransaction()->GetReadTs());
         auto optional_undo_link = exec_ctx_->GetTransactionManager()->GetUndoLink(scanned_tuple.second.GetRid());
         if (optional_undo_link.has_value()) {
+          fmt::print(stderr, "have undo link\n");
           auto undo_link = *optional_undo_link;
           std::vector<UndoLog> logs;
 
@@ -105,6 +112,12 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         }
       }
     } else {
+      fmt::print(stderr, "can directly read \n");
+      if (scanned_tuple.first.is_deleted_) {
+        fmt::print(stderr, "but deleted\n");
+        ++(*iter_ptr_);
+        continue;
+      }
       *tuple = scanned_tuple.second;
     }
 
