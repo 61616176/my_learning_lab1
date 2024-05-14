@@ -43,11 +43,13 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     timestamp_t ts = table_info->table_->GetTupleMeta(child_tuple_rid).ts_;
     timestamp_t tmp_ts = exec_ctx_->GetTransaction()->GetTransactionTempTs();
     if (txn_mgr->txn_map_.find(ts) == txn_mgr->txn_map_.end() && ts > exec_ctx_->GetTransaction()->GetReadTs()) {
-      continue;
+      exec_ctx_->GetTransaction()->SetTainted();
+      throw bustub::ExecutionException("tainted\n");
     }
 
     if (txn_mgr->txn_map_.find(ts) != txn_mgr->txn_map_.end() && ts != tmp_ts) {
-      continue;
+      exec_ctx_->GetTransaction()->SetTainted();
+      throw bustub::ExecutionException("tainted\n");
     }
 
     std::vector<bool> modified_fields;

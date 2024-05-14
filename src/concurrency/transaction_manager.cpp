@@ -105,6 +105,54 @@ void TransactionManager::Abort(Transaction *txn) {
   running_txns_.RemoveTxn(txn->read_ts_);
 }
 
-void TransactionManager::GarbageCollection() { UNIMPLEMENTED("not implemented"); }
+void TransactionManager::GarbageCollection() {
+  auto watermark = GetWatermark(); 
+  // 遍历base table
+  auto tablenames = catalog_->GetTableNames();
+  for (auto tablename : tablenames) {
+    TableInfo *table = catalog_->GetTable(tablename);
+    auto table_iter = table->table_->MakeIterator();
+
+    std::vector<txn_id_t> tail_txn;
+
+    while (!table_iter.IsEnd()) {
+      RID rid = table_iter.GetRID();
+      auto optional_undo_link = GetUndoLink(rid);
+      auto undo_link = *optional_undo_link;
+      bool begin_delete{false};
+      while (undo_link.IsValid()) {
+        auto undo_log = GetUndoLog(undo_link);
+
+        if (undo_log.ts_ == watermark) {
+          // 标记
+          begin_delete = true;
+          tail_txn.push_back(undo_link.prev_txn_);
+        } else if (undo_log.ts_ < watermark){
+          if (!begin_delete) {
+            begin_delete = true;            
+            tail_txn.push_back(undo_link.prev_txn_);
+          } else {
+            // 删除
+            undo_link.prev_txn_ = INVALID_TXN_ID;
+
+          }
+        }
+        undo_link = undo_log.prev_version_;
+      }      
+
+      ++table_iter;
+    }
+
+    std::sort(tail_txn.begin(), tail_txn.end());
+    auto last = std::unique(tail_txn.begin(), tail_txn.end());
+    tail_txn.erase(last, tail_txn.end());
+
+    for (auto &i : txn_map_) {
+      if (std::find(tail_txn.cbegin(), tail_txn.cend(), i.first) == tail_txn.cend()) {
+        txn_map_.erase(i.first);
+      }
+    }
+  }
+}
 
 }  // namespace bustub

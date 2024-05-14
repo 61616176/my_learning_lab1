@@ -53,12 +53,14 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     auto txn_mgr = exec_ctx_->GetTransactionManager();
     timestamp_t ts = table_info->table_->GetTupleMeta(child_tuple_rid).ts_;
     timestamp_t tmp_ts = exec_ctx_->GetTransaction()->GetTransactionTempTs();
-    if (txn_mgr->txn_map_.find(ts) == txn_mgr->txn_map_.end() && ts > exec_ctx_->GetTransaction()->GetReadTs()) {
-      continue;
+    if (txn_mgr->txn_map_.find(ts) == txn_mgr->txn_map_.end() && ts > exec_ctx_->GetTransaction()->GetReadTs()) {      
+      exec_ctx_->GetTransaction()->SetTainted();
+      throw bustub::ExecutionException("tainted\n");
     }
 
-    if (txn_mgr->txn_map_.find(ts) != txn_mgr->txn_map_.end() && ts != tmp_ts) {
-      continue;
+    if (txn_mgr->txn_map_.find(ts) != txn_mgr->txn_map_.end() && ts != tmp_ts) {      
+      exec_ctx_->GetTransaction()->SetTainted();
+      throw bustub::ExecutionException("tainted\n");
     }
 
     // 判断当前修改了的内容
