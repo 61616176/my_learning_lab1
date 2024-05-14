@@ -65,8 +65,8 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         //     modified_cols.push_back(col_idx);
         //   }
         // }
-        Tuple &modified = child_tuple;
-        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, modified, ts, undo_log.prev_version_};
+        //Tuple &modified = child_tuple;
+        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, undo_log.tuple_, undo_log.ts_, undo_log.prev_version_};
 
         exec_ctx_->GetTransaction()->ModifyUndoLog(undo_link->prev_log_idx_, new_undo_log);
       }
@@ -91,6 +91,8 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
 
     // 这个是修改table heap ， 不确定需不需要改进
     table_info->table_->UpdateTupleMeta({tmp_ts, true}, child_tuple_rid);
+
+    exec_ctx_->GetTransaction()->AppendWriteSet(plan_->GetTableOid(), child_tuple_rid);
 
     Schema &tuple_schema = table_info->schema_;
     std::vector<Column> tuple_columns = tuple_schema.GetColumns();

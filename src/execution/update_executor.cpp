@@ -88,6 +88,8 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         fmt::println(stderr, "size: {}", modified_cols.size());
         std::cerr << std::endl;
     fmt::print(stderr, "succeed foing here\n");
+
+
     if (ts == tmp_ts) {
       fmt::print(stderr, "self modification\n");
       // 检查是否是新插入tuple
@@ -98,54 +100,45 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         // get undo log schema
         std::vector<uint32_t> log_cols;
         std::vector<Value> log_vals;
+        std::vector<bool> log_modified = undo_log.modified_fields_;
         for (uint32_t idx = 0; idx < undo_log.modified_fields_.size(); idx++) {
           if (undo_log.modified_fields_[idx]) {
             log_cols.push_back(idx);
-            
           }
         }
-        auto log_schema = Scheam::CopySchema(&tuple_schema, log_cols);
+
+        auto log_schema = Schema::CopySchema(&tuple_schema, log_cols);
+        fmt::print(stderr, "log val: \n");
+        for (uint32_t idx = 0; idx < log_schema.GetColumns().size(); idx++) {
+          log_vals.push_back(undo_log.tuple_.GetValue(&log_schema, idx));
+          fmt::print(stderr, "{} ", undo_log.tuple_.GetValue(&log_schema, idx).ToString());
+        }
         // 修改filed、value、cols
-        for (auto col : modified_cols) {
-          if (std::count(modified_cols.cbegin(), modified_cols.cend(), col) == 0) {
+        uint32_t col_to_val{0};
+        for (uint32_t idx = 0; idx<modified_fields.size(); idx++) {
+          if (modified_fields[idx] == true && log_modified[idx] == false) {
             // 插入
             // modified_cols 和 modified_values 一一对应
-            auto iter_col = modified_cols.begin();
-            auto iter_val = modified_value.begin();
-            auto iter = std::find_if(modified_cols.begin(), modified_cols.end(), [col](auto i){
-              if (i < col)
-                return true;
-            })
-            log_cols.insert(iter, col);
-            modified_value.insert(iter_val + (iter-iter_col), )
-          } else {
-            // 复制
-          }
+            fmt::print(stderr, "插入新的 {}", idx);
+            log_modified[idx] = true;
+            log_cols.push_back(idx);
+            log_vals.push_back(modified_value[col_to_val]);
+          } 
+          if (modified_fields[idx]) {
+            col_to_val++;
+          } 
         }
-        for (uint32_t idx = 0; idx < undo_log.modified_fields_.size(); idx++) {
-          if (undo_log.modified_fields_[idx]) {
-            if (std::count(modified_cols.cbegin(), modified_cols.cend(), idx) == 0) {
-              // 加入
-              //fmt::print(stderr, "here {}\n", std::count(modified_cols.cend(), modified_cols.cend(), idx));
-              modified_fields[idx] = true;
-              modified_cols.push_back(idx);
-              modified_value[idx] = undo_log.tuple_. 
-            } else {
-              // 替换成log 种的
-            }
-            
-          }
-        }
-        for (auto i : modified_cols) {
+        
+        for (auto i : log_cols) {
           fmt::print(stderr, " {}", i);
         }
         std::cerr << std::endl;
 
         fmt::println(stderr, "begin copy schema");
-        auto modified_schema = Schema::CopySchema(&tuple_schema, modified_cols);
-        fmt::println(stderr, "finish copy schema");
-        Tuple modified(modified_value, &modified_schema);
-        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, modified, undo_log.ts_, undo_log.prev_version_};
+        auto modified_schema = Schema::CopySchema(&tuple_schema, log_cols);
+        fmt::println(stderr, "finish copy schema. schema : {}", modified_schema.ToString());
+        Tuple modified(log_vals, &modified_schema);
+        UndoLog new_undo_log{undo_log.is_deleted_, log_modified, modified, undo_log.ts_, undo_log.prev_version_};
         fmt::println(stderr, "update undo log");
         exec_ctx_->GetTransaction()->ModifyUndoLog(undo_link->prev_log_idx_, new_undo_log);
         fmt::println(stderr, "finish update undo log");
@@ -174,6 +167,7 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       return false;
     }
 
+    exec_ctx_->GetTransaction()->AppendWriteSet(plan_->GetTableOid(), child_tuple_rid);
     // 下面的应该是要被删除的
     // insert tuple to table
     // std::optional<RID> optional_res = table_info->table_->InsertTuple({0, false}, new_tuple);
