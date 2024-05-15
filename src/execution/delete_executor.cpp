@@ -57,18 +57,52 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
 
     if (ts == tmp_ts) {
       // 检查是否是新插入tuple
+      fmt::println(stderr, "self modification");
       auto undo_link = txn_mgr->GetUndoLink(child_tuple_rid);
       if (std::nullopt != undo_link) {
         // delete 的schema 会是原本tuple的schema， 因为tuple全部被修改
+        fmt::println(stderr, "has undo link");
+        fmt::println(stderr, "begin update undo log");
         auto undo_log = txn_mgr->GetUndoLog(*undo_link);
-        // for (uint32_t idx=0; idx<undo_log.modified_fields_.size(); idx++) {
-        //   if (undo_log.modified_fields_[idx]) {
-        //     modified_fields[idx] = true;
-        //     modified_cols.push_back(col_idx);
-        //   }
-        // }
-        //Tuple &modified = child_tuple;
-        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, undo_log.tuple_, undo_log.ts_, undo_log.prev_version_};
+        // get undo log schema
+        std::vector<Value> log_vals;
+        std::vector<bool> log_modified = undo_log.modified_fields_;
+        std::vector<uint32_t> log_cols;
+        
+        for (uint32_t idx = 0; idx < undo_log.modified_fields_.size(); idx++) {
+          if (undo_log.modified_fields_[idx]) {
+            log_cols.push_back(idx);
+          }
+        }
+
+        auto log_schema = Schema::CopySchema(&tuple_schema, log_cols);
+        fmt::print(stderr, "log val: \n");
+        for (uint32_t idx = 0; idx < log_schema.GetColumns().size(); idx++) {
+          log_vals.push_back(undo_log.tuple_.GetValue(&log_schema, idx));
+          fmt::print(stderr, "{} ", undo_log.tuple_.GetValue(&log_schema, idx).ToString());
+        }
+
+        std::vector<Value> modified_value;
+        for (uint32_t idx=0; idx < tuple_schema.GetColumns().size(); idx++) {
+          modified_value.push_back(child_tuple.GetValue(&tuple_schema, idx));
+        }
+
+        // 修改filed、value、cols
+        uint32_t col_to_val{0};
+        for (uint32_t idx = 0; idx<modified_fields.size(); idx++) {
+          if (modified_fields[idx] == true && log_modified[idx] == false) {
+            // 插入
+            // modified_cols 和 modified_values 一一对应
+            fmt::print(stderr, "插入新的 {}", idx);
+            log_modified[idx] = true;
+            log_vals.push_back(modified_value[col_to_val]);
+          } 
+          if (modified_fields[idx]) {
+            col_to_val++;
+          } 
+        }
+        Tuple modified(log_vals, &tuple_schema);
+        UndoLog new_undo_log{undo_log.is_deleted_, modified_fields, modified, undo_log.ts_, undo_log.prev_version_};
 
         exec_ctx_->GetTransaction()->ModifyUndoLog(undo_link->prev_log_idx_, new_undo_log);
       }
@@ -81,6 +115,9 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         prev_version = *is_undo_link;
       }
       // 这个false可能出问题，不过先不改它
+
+      fmt::println(stderr, "delted tuple is : {}", modified.ToString(&tuple_schema));
+
       UndoLog undo_log{false, modified_fields, modified, ts, prev_version};
 
       UndoLink undo_link = exec_ctx_->GetTransaction()->AppendUndoLog(undo_log);

@@ -67,8 +67,9 @@ struct UndoLink {
   friend auto operator!=(const UndoLink &a, const UndoLink &b) { return !(a == b); }
 
   /* Checks if the undo link points to something. */
-  auto IsValid() const -> bool { return prev_txn_ != INVALID_TXN_ID; }
-};
+  auto IsValid() const -> bool { 
+    return prev_txn_ != INVALID_TXN_ID; }
+  };
 
 struct UndoLog {
   /* Whether this log is a deletion marker */

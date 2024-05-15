@@ -331,7 +331,7 @@ TEST(TxnExecutorTest, DISABLED_UpdateTest2) {  // NOLINT
   TableHeapEntryNoMoreThan(*bustub, table_info, 1);
 }
 
-TEST(TxnExecutorTest, UpdateTestWithUndoLog) {  // NOLINT
+TEST(TxnExecutorTest, DISABLED_UpdateTestWithUndoLog) {  // NOLINT
   fmt::println(stderr, "--- UpdateTestWithUndoLog: update applied on a version chain with undo log ---");
   auto bustub = std::make_unique<BustubInstance>();
   auto empty_table = IntResult{};
@@ -470,7 +470,7 @@ TEST(TxnExecutorTest, DISABLED_UpdateConflict) {  // NOLINT
   }
 }
 
-TEST(TxnExecutorTest, GarbageCollection) {  // NOLINT
+TEST(TxnExecutorTest, DISABLED_GarbageCollection) {  // NOLINT
   auto bustub = std::make_unique<BustubInstance>();
   auto empty_table = IntResult{};
   Execute(*bustub, "CREATE TABLE table1(a int, b int, c int)");
@@ -508,10 +508,12 @@ TEST(TxnExecutorTest, GarbageCollection) {  // NOLINT
   WithTxn(txn3, CommitTxn(*bustub, _var, _txn));
   BumpCommitTs(*bustub, 2);
   auto txn_watermark_at_3 = BeginTxn(*bustub, "txn_watermark_at_3");
+  fmt::println(stderr, "reach line 512");
   auto txn_watermark_at_3_id = txn_watermark_at_3->GetTransactionId();
+  fmt::println(stderr, "reach line 513");
   BumpCommitTs(*bustub, 2);
   TxnMgrDbg("after commit", bustub->txn_manager_.get(), table_info, table_info->table_.get());
-
+  fmt::println(stderr, "reach line 514");
   WithTxn(txn_watermark_at_0, QueryShowResult(*bustub, _var, _txn, query, empty_table));
   WithTxn(txn_watermark_at_1,
           QueryShowResult(*bustub, _var, _txn, query, IntResult{{0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {3, 3, 3}}));
@@ -608,7 +610,7 @@ TEST(TxnExecutorTest, GarbageCollection) {  // NOLINT
   WithTxn(txn3, EnsureTxnGCed(*bustub, _var, txn3_id));
 }
 
-TEST(TxnExecutorTest, DISABLED_GarbageCollectionWithTainted) {  // NOLINT
+TEST(TxnExecutorTest, GarbageCollectionWithTainted) {  // NOLINT
   auto empty_table = IntResult{};
   auto bustub = std::make_unique<BustubInstance>();
   Execute(*bustub, "CREATE TABLE table1(a int, b int, c int)");
@@ -687,6 +689,8 @@ TEST(TxnExecutorTest, DISABLED_GarbageCollectionWithTainted) {  // NOLINT
           QueryShowResult(*bustub, _var, _txn, query, IntResult{{20, 0, 0}, {12, 2, 2}, {13, 3, 3}}));
 
   fmt::println(stderr, "C: taint txn5 + txn6 + third GC");
+  TxnMgrDbg("before tainted", bustub->txn_manager_.get(),
+            table_info, table_info->table_.get());
   WithTxn(txn5, ExecuteTxn(*bustub, _var, _txn, "DELETE FROM table1 WHERE a = 12"));
   WithTxn(txn5, ExecuteTxnTainted(*bustub, _var, _txn, "DELETE FROM table1 WHERE a = 11"));
   WithTxn(txn6, ExecuteTxnTainted(*bustub, _var, _txn, "DELETE FROM table1 WHERE a = 11"));

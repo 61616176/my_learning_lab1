@@ -72,7 +72,15 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
 
       // 找到第一个小于等于当前ts的log
       do {
+        if (!undo_link.IsValid()) {
+          break;
+        }
+        if (txn_mgr->txn_map_.find(undo_link.prev_txn_) == txn_mgr->txn_map_.cend()) {
+          fmt::println(stderr, "there is no undo log");
+          break;
+        }
         fmt::print(stderr, " txn{}@ ", undo_link.prev_txn_);
+        
         auto undo_log = txn_mgr->GetUndoLog(undo_link);
 
         std::vector<uint32_t> modified_cols;
@@ -83,11 +91,12 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
         }
         auto part_of_schema = Schema::CopySchema(&table_info->schema_, modified_cols);
 
-        fmt::print(stderr, "is deleted:{} tuple:{} ts:{}", undo_log.is_deleted_,
-                   undo_log.tuple_.ToString(&part_of_schema), undo_log.ts_);
+        fmt::print(stderr, "is deleted:{} ", undo_log.is_deleted_);
+        fmt::print(stderr, "ts:{} ", undo_log.ts_);
+        fmt::print(stderr, "tuple:{}\n", undo_log.tuple_.ToString(&part_of_schema));
 
         undo_link = undo_log.prev_version_;
-      } while (undo_link.IsValid());
+      } while (true);
 
     } else {
       fmt::println(stderr, "no undo log");

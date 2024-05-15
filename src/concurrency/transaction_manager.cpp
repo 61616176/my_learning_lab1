@@ -107,6 +107,7 @@ void TransactionManager::Abort(Transaction *txn) {
 
 void TransactionManager::GarbageCollection() {
   auto watermark = GetWatermark(); 
+  fmt::println(stderr, "watermark: {}", watermark);
   // 遍历base table
   auto tablenames = catalog_->GetTableNames();
   for (auto tablename : tablenames) {
@@ -116,25 +117,37 @@ void TransactionManager::GarbageCollection() {
     std::vector<txn_id_t> tail_txn;
 
     while (!table_iter.IsEnd()) {
+      bool begin_delete{false};
+      if (table_iter.GetTuple().first.ts_ <= watermark) {
+        fmt::println(stderr, "base 小于 watermark");
+        begin_delete = true;
+      }
+
       RID rid = table_iter.GetRID();
       auto optional_undo_link = GetUndoLink(rid);
       auto undo_link = *optional_undo_link;
-      bool begin_delete{false};
-      while (undo_link.IsValid()) {
+      while (true) {
+        if (txn_map_.find(undo_link.prev_txn_) == txn_map_.end()) {
+          break;
+        }
         auto undo_log = GetUndoLog(undo_link);
-
-        if (undo_log.ts_ == watermark) {
+        fmt::println(stderr, "undo log ts: {}", undo_log.ts_);
+        if (undo_log.ts_ > watermark) {
+          fmt::println(stderr, "大于，保留\n");
+          tail_txn.push_back(undo_link.prev_txn_);
+        } else if (undo_log.ts_ == watermark) {
           // 标记
+          fmt::println(stderr, "等于，保留\n");
           begin_delete = true;
           tail_txn.push_back(undo_link.prev_txn_);
-        } else if (undo_log.ts_ < watermark){
+        } else {
           if (!begin_delete) {
+            fmt::println(stderr, "第一个小于，保留\n");
             begin_delete = true;            
             tail_txn.push_back(undo_link.prev_txn_);
           } else {
             // 删除
-            undo_link.prev_txn_ = INVALID_TXN_ID;
-
+            fmt::println(stderr, "删除\n");
           }
         }
         undo_link = undo_log.prev_version_;
@@ -147,10 +160,18 @@ void TransactionManager::GarbageCollection() {
     auto last = std::unique(tail_txn.begin(), tail_txn.end());
     tail_txn.erase(last, tail_txn.end());
 
+    std::vector<txn_id_t> key_to_remove;
     for (auto &i : txn_map_) {
       if (std::find(tail_txn.cbegin(), tail_txn.cend(), i.first) == tail_txn.cend()) {
-        txn_map_.erase(i.first);
+        // check state of i
+        if (i.second->GetTransactionState() != TransactionState::RUNNING) {
+          key_to_remove.push_back(i.first);
+        }        
       }
+    }
+
+    for (auto i : key_to_remove) {
+      txn_map_.erase(i);
     }
   }
 }
