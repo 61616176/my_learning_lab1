@@ -34,16 +34,7 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   while (!iter_ptr_->IsEnd()) {
     std::pair<TupleMeta, Tuple> scanned_tuple = iter_ptr_->GetTuple();
 
-    if (auto filter_expr = plan_->filter_predicate_; filter_expr != nullptr) {
-      // std::cout << "right here 1" << std::endl;
-      Value value = filter_expr->Evaluate(&(scanned_tuple.second), GetOutputSchema());
-      if (value.IsNull() || !value.GetAs<bool>()) {
-        ++(*iter_ptr_);
-        // return true;
-        continue;
-      }
-      fmt::print(stderr, "let's see\n");
-    }
+    
 
     // 判断是否删除应该放在重建tuple 的 部分完成
     // if (scanned_tuple.first.is_deleted_) {
@@ -119,6 +110,18 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         continue;
       }
       *tuple = scanned_tuple.second;
+    }
+
+    // predicate
+    if (auto filter_expr = plan_->filter_predicate_; filter_expr != nullptr) {
+      // std::cout << "right here 1" << std::endl;
+      Value value = filter_expr->Evaluate(tuple, GetOutputSchema());
+      if (value.IsNull() || !value.GetAs<bool>()) {
+        ++(*iter_ptr_);
+        // return true;
+        continue;
+      }
+      fmt::print(stderr, "let's see\n");
     }
 
     fmt::print(stderr, "here is a check time\n");
