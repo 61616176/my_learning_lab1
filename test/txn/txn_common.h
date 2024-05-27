@@ -362,10 +362,12 @@ auto AbortTxn(BustubInstance &instance, const std::string &txn_var_name, Transac
 }
 
 auto CheckTainted(BustubInstance &instance, const std::string &txn_var_name, Transaction *txn) {
+  fmt::print(stderr, "check taintied\n");
   if (txn->GetTransactionState() != TransactionState::TAINTED) {
     fmt::println(stderr, "should set to tainted state var={} id={}", txn_var_name, txn->GetTransactionId());
     std::terminate();
   }
+  fmt::print(stderr, "it's tainted\n");
   fmt::println(stderr, "- {} var={} id={} status={} read_ts={}", Header("txn_tainted"), txn_var_name,
                txn->GetTransactionIdHumanReadable(), txn->GetTransactionState(), txn->GetReadTs());
 }

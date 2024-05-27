@@ -144,6 +144,8 @@ class TransactionManager {
   /** The last committed timestamp. */
   std::atomic<timestamp_t> last_commit_ts_{0};
 
+  std::mutex pk_index_mutex_;
+
   /** Catalog */
   Catalog *catalog_;
 
